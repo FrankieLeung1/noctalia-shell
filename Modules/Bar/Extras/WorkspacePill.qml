@@ -207,6 +207,8 @@ Item {
     cursorShape: Qt.PointingHandCursor
     hoverEnabled: true
     onClicked: {
+      if (workspace.isVirtual)
+        return;
       CompositorService.switchToWorkspace(workspace);
     }
   }

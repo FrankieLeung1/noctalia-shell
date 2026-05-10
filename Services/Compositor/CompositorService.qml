@@ -381,7 +381,8 @@ Singleton {
                            appId: window.appId,
                            isFocused: window.isFocused,
                            workspaceId: window.workspaceId,
-                           handle: window.handle
+                           handle: window.handle,
+                           pinned: window.pinned === true
                          });
       }
     }

@@ -116,6 +116,10 @@ Item {
   // Revision counter to force window list re-evaluation (for liveWindows binding in grouped mode)
   property int windowRevision: 0
 
+  // Sentinel id for the synthetic "pinned apps" pill — picked to avoid
+  // colliding with any real compositor workspace id.
+  readonly property int pinnedVirtualWsId: -9999
+
   property ListModel localWorkspaces: ListModel {}
   property int lastFocusedWorkspaceId: -1
   property real masterProgress: 0.0
@@ -225,15 +229,25 @@ Item {
   function switchByOffset(offset) {
     if (localWorkspaces.count <= 1)
       return;
-    var current = getFocusedLocalIndex();
-    if (current < 0)
-      current = 0;
-    var next = (current + offset) % localWorkspaces.count;
-    if (next < 0)
-      next = localWorkspaces.count - 1;
-    if (next === current)
+    // Build list of switchable indices (exclude synthetic pills)
+    var indices = [];
+    for (var k = 0; k < localWorkspaces.count; k++) {
+      const candidate = localWorkspaces.get(k);
+      if (candidate && !candidate.isVirtual)
+        indices.push(k);
+    }
+    if (indices.length <= 1)
       return;
-    const ws = localWorkspaces.get(next);
+    var current = getFocusedLocalIndex();
+    var currentPos = indices.indexOf(current);
+    if (currentPos < 0)
+      currentPos = 0;
+    var nextPos = (currentPos + offset) % indices.length;
+    if (nextPos < 0)
+      nextPos += indices.length;
+    if (nextPos === currentPos)
+      return;
+    const ws = localWorkspaces.get(indices[nextPos]);
     if (ws && ws.idx !== undefined)
       CompositorService.switchToWorkspace(ws);
   }
@@ -303,10 +317,10 @@ Item {
       scheduleRefresh();
     }
     function onWindowListChanged() {
-      if (appVisible || showLabelsOnlyWhenOccupied) {
-        root.windowRevision++;
-        scheduleRefresh();
-      }
+      // Always refresh — the synthetic "pinned apps" pill needs to appear
+      // or disappear in lockstep with togglepin, even outside grouped mode.
+      root.windowRevision++;
+      scheduleRefresh();
     }
     function onActiveWindowChanged() {
       if (appVisible) {
@@ -367,6 +381,33 @@ Item {
         // to avoid Qt 6.9 ListModel nested array serialization issues
 
         targetList.push(workspaceData);
+      }
+    }
+
+    // Append a synthetic "pinned apps" workspace if any compositor-level
+    // pinned (sticky) windows exist on this screen.
+    var pinnedOutput = followFocusedScreen ? focusedOutput : (screen ? screen.name.toLowerCase() : null);
+    if (pinnedOutput) {
+      var hasPinned = false;
+      for (var p = 0; p < CompositorService.windows.count; p++) {
+        var pw = CompositorService.windows.get(p);
+        if (pw && pw.pinned && pw.output && pw.output.toLowerCase() === pinnedOutput) {
+          hasPinned = true;
+          break;
+        }
+      }
+      if (hasPinned) {
+        targetList.push({
+          id: root.pinnedVirtualWsId,
+          idx: 0,
+          name: "",
+          output: pinnedOutput,
+          isFocused: false,
+          isActive: false,
+          isUrgent: false,
+          isOccupied: true,
+          isVirtual: true
+        });
       }
     }
 
@@ -700,8 +741,32 @@ Item {
 
       function updateWindows() {
         var wsId = workspaceModel?.id;
-        if (wsId !== undefined && wsId !== null) {
-          liveWindows = CompositorService.getWindowsForWorkspace(wsId);
+        if (wsId === root.pinnedVirtualWsId) {
+          // Synthetic "p" pill: collect all sticky windows on this output.
+          var targetOutput = (workspaceModel.output || "").toLowerCase();
+          var pinnedList = [];
+          for (var i = 0; i < CompositorService.windows.count; i++) {
+            var w = CompositorService.windows.get(i);
+            if (!w || !w.pinned)
+              continue;
+            if (targetOutput && w.output && w.output.toLowerCase() !== targetOutput)
+              continue;
+            pinnedList.push({
+              id: w.id,
+              title: w.title,
+              appId: w.appId,
+              isFocused: w.isFocused,
+              workspaceId: w.workspaceId,
+              pinned: true
+            });
+          }
+          liveWindows = pinnedList;
+        } else if (wsId !== undefined && wsId !== null) {
+          // Drop sticky/pinned (compositor-level) windows so they don't get
+          // drawn on every workspace pill as the user switches workspace.
+          liveWindows = CompositorService.getWindowsForWorkspace(wsId).filter(function (w) {
+            return !w.pinned;
+          });
         } else {
           liveWindows = [];
         }
@@ -750,7 +815,7 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
         onPressed: mouse => {
-                     if (mouse.button === Qt.LeftButton) {
+                     if (mouse.button === Qt.LeftButton && !groupedContainer.workspaceModel.isVirtual) {
                        CompositorService.switchToWorkspace(groupedContainer.workspaceModel);
                      }
                    }
@@ -860,7 +925,7 @@ Item {
       Item {
         id: groupedWorkspaceNumberContainer
 
-        visible: root.labelMode !== "none" && root.showBadge && (!root.showLabelsOnlyWhenOccupied || groupedContainer.hasWindows || groupedContainer.workspaceModel.isFocused)
+        visible: groupedContainer.workspaceModel.isVirtual ? root.showBadge : (root.labelMode !== "none" && root.showBadge && (!root.showLabelsOnlyWhenOccupied || groupedContainer.hasWindows || groupedContainer.workspaceModel.isFocused))
 
         anchors {
           left: parent.left
@@ -928,6 +993,9 @@ Item {
           anchors.centerIn: parent
 
           text: {
+            if (groupedContainer.workspaceModel.isVirtual) {
+              return "p";
+            }
             if (groupedContainer.workspaceModel.name && groupedContainer.workspaceModel.name.length > 0) {
               if (root.labelMode === "name") {
                 return groupedContainer.workspaceModel.name.substring(0, root.characterCount);

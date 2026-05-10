@@ -355,7 +355,8 @@ Item {
             "isFocused": windowData.isFocused === true,
             "output": windowData.output ? String(windowData.output) : "",
             "x": (typeof windowData.x === "number" && !isNaN(windowData.x)) ? windowData.x : 0,
-            "y": (typeof windowData.y === "number" && !isNaN(windowData.y)) ? windowData.y : 0
+            "y": (typeof windowData.y === "number" && !isNaN(windowData.y)) ? windowData.y : 0,
+            "pinned": windowData.pinned === true
           };
 
           windowsList.push(normalized);
@@ -409,6 +410,7 @@ Item {
       // Extract position
       let x = 0;
       let y = 0;
+      let pinned = false;
       try {
         const ipcData = toplevel.lastIpcObject;
         if (ipcData && ipcData.at) {
@@ -417,6 +419,9 @@ Item {
         } else if (typeof toplevel.x !== 'undefined') {
           x = toplevel.x;
           y = toplevel.y;
+        }
+        if (ipcData && ipcData.pinned === true) {
+          pinned = true;
         }
       } catch (e) {}
 
@@ -432,7 +437,8 @@ Item {
         "isFocused": focused,
         "output": output,
         "x": safeX,
-        "y": safeY
+        "y": safeY,
+        "pinned": pinned
       };
     } catch (e) {
       return null;
