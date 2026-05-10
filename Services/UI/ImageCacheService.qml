@@ -25,13 +25,27 @@ Singleton {
 
   // Supported image formats - extended list when ImageMagick is available
   readonly property var basicImageFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp"]
-  readonly property var extendedImageFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.webp", "*.avif", "*.heic", "*.heif", "*.tiff", "*.tif", "*.pnm", "*.pgm", "*.ppm", "*.pbm", "*.svg", "*.svgz", "*.ico", "*.icns", "*.jxl", "*.jp2", "*.j2k", "*.exr", "*.hdr", "*.dds", "*.tga"]
+  readonly property var extendedImageFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp", "*.webp", "*.avif", "*.heic", "*.heif", "*.tiff", "*.tif", "*.pnm", "*.pgm", "*.ppm", "*.pbm", "*.svg", "*.svgz", "*.ico", "*.icns", "*.jxl", "*.jp2", "*.j2k", "*.exr", "*.hdr", "*.dds", "*.tga", "*.mp4", "*.webm", "*.mov", "*.mkv", "*.ogv"]
   readonly property var imageFilters: imageMagickAvailable ? extendedImageFilters : basicImageFilters
 
   // Check if a file format needs conversion (not natively supported by Qt)
   function needsConversion(filePath) {
     const ext = "*." + filePath.toLowerCase().split('.').pop();
     return !basicImageFilters.includes(ext);
+  }
+
+  function isVideo(filePath) {
+    const videoExtensions = ["mp4", "webm", "mov", "mkv", "ogv"];
+    const ext = filePath.toLowerCase().split('.').pop();
+    return videoExtensions.includes(ext);
+  }
+
+  function getProcessedSourcePath(filePath) {
+    const srcEsc = filePath.replace(/'/g, "'\\''");
+    if (isVideo(filePath)) {
+      return `'${srcEsc}[0]'`;
+    }
+    return `'${srcEsc}'`;
   }
 
   // -------------------------------------------------
@@ -198,8 +212,8 @@ Singleton {
 
   // Copy a temporary file to the cache directory
   function copyTempFileToCache(sourcePath, destPath, cacheKey) {
-    const srcEsc = sourcePath.replace(/'/g, "'\\''");
-    const dstEsc = destPath.replace(/'/g, "'\\''");
+    const srcEsc = sourcePath.replace(/'/g, "'\\\\''");
+    const dstEsc = destPath.replace(/'/g, "'\\\\''");
 
     const processString = `
       import QtQuick
@@ -331,11 +345,11 @@ Singleton {
   // ImageMagick Processing: Thumbnail
   // -------------------------------------------------
   function startThumbnailProcessing(sourcePath, outputPath, cacheKey) {
-    const srcEsc = sourcePath.replace(/'/g, "'\\''");
-    const dstEsc = outputPath.replace(/'/g, "'\\''");
+    const srcPath = getProcessedSourcePath(sourcePath);
+    const dstEsc = outputPath.replace(/'/g, "'\\\\''");
 
     // Use Lanczos filter for high-quality downscaling, subtle unsharp mask, and PNG for lossless output
-    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '384x384^' -gravity center -extent 384x384 -unsharp 0x0.5 '${dstEsc}'`;
+    const command = `magick ${srcPath} -auto-orient -filter Lanczos -resize '384x384^' -gravity center -extent 384x384 -unsharp 0x0.5 '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }
@@ -344,11 +358,11 @@ Singleton {
   // ImageMagick Processing: Large
   // -------------------------------------------------
   function startLargeProcessing(sourcePath, outputPath, width, height, cacheKey) {
-    const srcEsc = sourcePath.replace(/'/g, "'\\''");
-    const dstEsc = outputPath.replace(/'/g, "'\\''");
+    const srcPath = getProcessedSourcePath(sourcePath);
+    const dstEsc = outputPath.replace(/'/g, "'\\\\''");
 
     // Use Lanczos filter for high-quality downscaling and PNG for lossless output
-    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '${width}x${height}^' '${dstEsc}'`;
+    const command = `magick ${srcPath} -auto-orient -filter Lanczos -resize '${width}x${height}^' '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }
@@ -358,8 +372,8 @@ Singleton {
   // -------------------------------------------------
   function downloadAndProcessAvatar(url, username, outputPath, cacheKey) {
     const tempPath = contributorsDir + username + "_temp.png";
-    const tempEsc = tempPath.replace(/'/g, "'\\''");
-    const urlEsc = url.replace(/'/g, "'\\''");
+    const tempEsc = tempPath.replace(/'/g, "'\\\\''");
+    const urlEsc = url.replace(/'/g, "'\\\\''");
 
     // Download first (uses utility queue since curl/wget are lightweight)
     const downloadCmd = `curl -L -s -o '${tempEsc}' '${urlEsc}' || wget -q -O '${tempEsc}' '${urlEsc}'`;
@@ -368,7 +382,7 @@ Singleton {
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["sh", "-c", "${downloadCmd.replace(/"/g, '\\"')}"]
+        command: ["sh", "-c", "${downloadCmd.replace(/"/g, '\\\\\\"')}\"]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
       }
@@ -393,11 +407,11 @@ Singleton {
   }
 
   function processCircularAvatar(inputPath, outputPath, cacheKey) {
-    const srcEsc = inputPath.replace(/'/g, "'\\''");
-    const dstEsc = outputPath.replace(/'/g, "'\\''");
+    const srcEsc = inputPath.replace(/'/g, "'\\\\''");
+    const dstEsc = outputPath.replace(/'/g, "'\\\\''");
 
     // ImageMagick command for circular crop with alpha
-    const command = `magick '${srcEsc}' -resize 256x256^ -gravity center -extent 256x256 -alpha set \\( +clone -channel A -evaluate set 0 +channel -fill white -draw 'circle 128,128 128,0' \\) -compose DstIn -composite '${dstEsc}'`;
+    const command = `magick '${srcEsc}' -resize 256x256^ -gravity center -extent 256x256 -alpha set \\\\\\( +clone -channel A -evaluate set 0 +channel -fill white -draw 'circle 128,128 128,0' \\\\\\) -compose DstIn -composite '${dstEsc}'`;
 
     queueImageMagickProcess({
                               command: command,
@@ -620,7 +634,7 @@ Singleton {
   }
 
   function getMtime(filePath, callback) {
-    const pathEsc = filePath.replace(/'/g, "'\\''");
+    const pathEsc = filePath.replace(/'/g, "'\\\\''");
     const processString = `
       import QtQuick
       import Quickshell.Io
@@ -645,7 +659,7 @@ Singleton {
   }
 
   function checkFileExists(filePath, callback) {
-    const pathEsc = filePath.replace(/'/g, "'\\''");
+    const pathEsc = filePath.replace(/'/g, "'\\\\''");
     const processString = `
       import QtQuick
       import Quickshell.Io
@@ -669,7 +683,7 @@ Singleton {
   }
 
   function getImageDimensions(filePath, callback) {
-    const pathEsc = filePath.replace(/'/g, "'\\''");
+    const pathEsc = filePath.replace(/'/g, "'\\\\''");
     const processString = `
       import QtQuick
       import Quickshell.Io
