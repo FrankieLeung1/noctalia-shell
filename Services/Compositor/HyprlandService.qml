@@ -420,6 +420,7 @@ Item {
           x = toplevel.x;
           y = toplevel.y;
         }
+
         if (ipcData && ipcData.pinned === true) {
           pinned = true;
         }
