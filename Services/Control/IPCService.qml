@@ -55,6 +55,18 @@ Singleton {
     function showBar() {
       BarService.show();
     }
+    function forceHide() {
+      BarService.isVisible = false;
+    }
+    function forceShow() {
+      BarService.isVisible = true;
+    }
+    function toggleForceHide() {
+      BarService.isVisible = !BarService.isVisible;
+    }
+    function isVisible(): bool {
+      return BarService.isVisible;
+    }
     function peek() {
       BarService.peek();
     }
@@ -482,6 +494,31 @@ Singleton {
           Settings.data.nightLight.enabled = true;
         }
       }
+    }
+  }
+
+  IpcHandler {
+    target: "screenCorners"
+    function toggle() {
+      Settings.data.general.showScreenCorners = !Settings.data.general.showScreenCorners;
+    }
+    function enable() {
+      Settings.data.general.showScreenCorners = true;
+    }
+    function disable() {
+      Settings.data.general.showScreenCorners = false;
+    }
+    function setRadius(ratio: string) {
+      var val = parseFloat(ratio);
+      if (isNaN(val))
+        return;
+      Settings.data.general.screenRadiusRatio = val;
+    }
+    function isEnabled(): bool {
+      return Settings.data.general.showScreenCorners;
+    }
+    function getRadius(): real {
+      return Settings.data.general.screenRadiusRatio;
     }
   }
 
