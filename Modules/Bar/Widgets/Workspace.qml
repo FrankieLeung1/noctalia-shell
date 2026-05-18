@@ -9,6 +9,7 @@ import Quickshell.Widgets
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 import qs.Widgets
 
@@ -792,7 +793,7 @@ Item {
       color: Style.capsuleColor
       radius: Style.radiusS
       border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (groupHoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
-      border.width: Style.borderS
+      border.width: PowerProfileService.noctaliaPerformanceMode ? 0 : Style.borderS
 
       Behavior on width {
         NumberAnimation {
