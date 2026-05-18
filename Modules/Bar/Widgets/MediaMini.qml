@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell
 import qs.Commons
 import qs.Modules.Bar.Extras
@@ -288,17 +289,25 @@ Item {
         visible: !isVertical
         z: 1
 
-        // Album art / Progress ring
+        // Album art / Progress ring / Default Icon
         Item {
-          visible: hasPlayer && (showAlbumArt || showProgressRing)
+          visible: (hasPlayer && (showAlbumArt || showProgressRing)) || !hasPlayer
           Layout.preferredWidth: visible ? artSize : 0
           Layout.preferredHeight: visible ? artSize : 0
           Layout.alignment: Qt.AlignVCenter
 
+          NIcon {
+            visible: !hasPlayer
+            anchors.centerIn: parent
+            icon: "music"
+            pointSize: barFontSize
+            color: Color.mOnSurfaceVariant
+          }
+
           ProgressRing {
             id: progressRing
             anchors.fill: parent
-            visible: showProgressRing
+            visible: hasPlayer && showProgressRing
             progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
             lineWidth: root.progressWidth
           }
@@ -306,7 +315,7 @@ Item {
           NImageRounded {
             visible: showAlbumArt && hasPlayer
             anchors.fill: parent
-            anchors.margins: showProgressRing ? root.progressWidth * 2 : 0
+            anchors.margins: (showProgressRing && hasPlayer) ? root.progressWidth * 2 : 0
             radius: width / 2
             imagePath: MediaService.trackArtUrl
             borderWidth: 0
@@ -320,7 +329,7 @@ Item {
           Layout.fillWidth: true
           Layout.alignment: Qt.AlignVCenter
           Layout.preferredHeight: capsuleHeight
-          fadeRoundLeftCorners: !(showAlbumArt || showProgressRing)
+          fadeRoundLeftCorners: !((hasPlayer && (showAlbumArt || showProgressRing)) || !hasPlayer)
 
           text: title
 
@@ -355,9 +364,17 @@ Item {
         y: Style.pixelAlignCenter(parent.height, height)
         z: 1
 
+        NIcon {
+          visible: !hasPlayer
+          anchors.centerIn: parent
+          icon: "music"
+          pointSize: barFontSize
+          color: Color.mOnSurfaceVariant
+        }
+
         ProgressRing {
           anchors.fill: parent
-          visible: showProgressRing
+          visible: showProgressRing && hasPlayer
           progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
           lineWidth: root.progressWidth
         }
@@ -365,7 +382,7 @@ Item {
         NImageRounded {
           visible: showAlbumArt && hasPlayer
           anchors.fill: parent
-          anchors.margins: showProgressRing ? root.progressWidth * 2 : 0
+          anchors.margins: (showProgressRing && hasPlayer) ? root.progressWidth * 2 : 0
           radius: width / 2
           imagePath: MediaService.trackArtUrl
           borderWidth: 0
@@ -394,12 +411,12 @@ Item {
 
     onClicked: mouse => {
                  TooltipService.hide();
-                 if (mouse.button === Qt.LeftButton) {
-                   PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
+                 if (mouse.button === Qt.LeftButton && hasPlayer) {
+                   MediaService.playPause();
                  } else if (mouse.button === Qt.RightButton) {
                    PanelService.showContextMenu(contextMenu, container, screen);
-                 } else if (mouse.button === Qt.MiddleButton && hasPlayer) {
-                   MediaService.playPause();
+                 } else if (mouse.button === Qt.MiddleButton) {
+                   PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
                  } else if (mouse.button === Qt.ForwardButton && hasPlayer) {
                    MediaService.next();
                  } else if (mouse.button === Qt.BackButton && hasPlayer) {
@@ -460,51 +477,45 @@ Item {
     }
   }
 
-  // Progress Ring Component
-  component ProgressRing: Canvas {
+  // Progress Ring Component - optimized with Shape
+  component ProgressRing: Shape {
     property real progress: 0
     property real lineWidth: 2
 
-    function repaint() {
-      if (this.visible && this.opacity > 0)
-        requestPaint();
-    }
+    smooth: true
+    layer.enabled: true
+    layer.samples: 4
 
-    onProgressChanged: repaint()
-    Component.onCompleted: repaint()
+    ShapePath {
+      fillColor: "transparent"
+      strokeColor: Qt.alpha(Color.mOnSurface, 0.4)
+      strokeWidth: parent.lineWidth
+      capStyle: ShapePath.RoundCap
 
-    Connections {
-      target: Color
-      function onMPrimaryChanged() {
-        repaint();
+      PathAngleArc {
+        centerX: width / 2
+        centerY: height / 2
+        radiusX: width / 2 - parent.lineWidth
+        radiusY: height / 2 - parent.lineWidth
+        startAngle: -90
+        sweepAngle: 360
       }
     }
 
-    onPaint: {
-      if (width <= 0 || height <= 0)
-        return;
+    ShapePath {
+      fillColor: "transparent"
+      strokeColor: Color.mPrimary
+      strokeWidth: parent.lineWidth
+      capStyle: ShapePath.RoundCap
 
-      var ctx = getContext("2d");
-      var centerX = width / 2;
-      var centerY = height / 2;
-      var radius = Math.min(width, height) / 2 - lineWidth;
-
-      ctx.reset();
-
-      // Background
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = Qt.alpha(Color.mOnSurface, 0.4);
-      ctx.stroke();
-
-      // Progress
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI);
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = Color.mPrimary;
-      ctx.lineCap = "round";
-      ctx.stroke();
+      PathAngleArc {
+        centerX: width / 2
+        centerY: height / 2
+        radiusX: width / 2 - parent.lineWidth
+        radiusY: height / 2 - parent.lineWidth
+        startAngle: -90
+        sweepAngle: 360 * parent.progress
+      }
     }
   }
 }
