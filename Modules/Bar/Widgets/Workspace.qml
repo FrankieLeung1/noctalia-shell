@@ -935,14 +935,15 @@ Item {
           topMargin: -Style.fontSizeXS * 0.25
         }
 
-        width: Math.max(groupedWorkspaceNumber.implicitWidth + Style.margin2XS, Style.fontSizeXXS * 2)
-        height: Math.max(groupedWorkspaceNumber.implicitHeight + Style.marginXS, Style.fontSizeXXS * 2)
+        width: Math.max(groupedWorkspaceNumber.implicitWidth + Style.marginXS, Style.fontSizeXXS * 1.5)
+        height: Math.max(groupedWorkspaceNumber.implicitHeight + Style.marginXXXS, Style.fontSizeXXS * 1.5)
 
         Rectangle {
           id: groupedWorkspaceNumberBackground
 
           anchors.fill: parent
           radius: Math.min(Style.radiusL, width / 2)
+          visible: !PowerProfileService.noctaliaPerformanceMode || groupedContainer.workspaceModel.isFocused || groupedContainer.workspaceModel.isUrgent
 
           color: {
             if (groupedContainer.workspaceModel.isFocused)
@@ -977,12 +978,12 @@ Item {
         Rectangle {
           id: groupedWorkspaceNumberBurst
           anchors.centerIn: groupedWorkspaceNumberContainer
-          width: groupedWorkspaceNumberContainer.width + 12 * root.masterProgress
-          height: groupedWorkspaceNumberContainer.height + 12 * root.masterProgress
+          width: groupedWorkspaceNumberContainer.width + 8 * root.masterProgress
+          height: groupedWorkspaceNumberContainer.height + 8 * root.masterProgress
           radius: width / 2
           color: "transparent"
           border.color: root.effectColor
-          border.width: Math.max(1, Math.round((2 + 4 * (1.0 - root.masterProgress))))
+          border.width: Math.max(1, Math.round((1 + 3 * (1.0 - root.masterProgress))))
           opacity: root.effectsActive && groupedContainer.workspaceModel.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
           visible: root.effectsActive && groupedContainer.workspaceModel.isFocused
           z: 1
@@ -1021,10 +1022,17 @@ Item {
               return Color.resolveOnColorKey(root.focusedColor);
             if (groupedContainer.workspaceModel.isUrgent)
               return Color.mOnError;
-            if (groupedContainer.hasWindows)
-              return Color.resolveOnColorKey(root.occupiedColor);
 
-            return Color.resolveOnColorKey(root.emptyColor);
+            if (!PowerProfileService.noctaliaPerformanceMode) {
+              if (groupedContainer.hasWindows)
+                return Color.resolveOnColorKey(root.occupiedColor);
+              return Color.resolveOnColorKey(root.emptyColor);
+            }
+
+            if (groupedContainer.hasWindows)
+              return Color.resolveColorKey(root.occupiedColor);
+
+            return Color.resolveColorKey(root.emptyColor);
           }
 
           Behavior on opacity {
