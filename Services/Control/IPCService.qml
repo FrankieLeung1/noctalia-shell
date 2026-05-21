@@ -787,16 +787,16 @@ Singleton {
       }
     }
 
-    function toggleNoctaliaPerformance() {
-      PowerProfileService.toggleNoctaliaPerformance();
+    function toggleNoctaliaPerformance(quiet: string) {
+      PowerProfileService.toggleNoctaliaPerformance(quiet === "quiet" || quiet === "true");
     }
 
-    function enableNoctaliaPerformance() {
-      PowerProfileService.setNoctaliaPerformance(true);
+    function enableNoctaliaPerformance(quiet: string) {
+      PowerProfileService.setNoctaliaPerformance(true, quiet === "quiet" || quiet === "true");
     }
 
-    function disableNoctaliaPerformance() {
-      PowerProfileService.setNoctaliaPerformance(false);
+    function disableNoctaliaPerformance(quiet: string) {
+      PowerProfileService.setNoctaliaPerformance(false, quiet === "quiet" || quiet === "true");
     }
   }
 

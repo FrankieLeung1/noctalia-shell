@@ -114,15 +114,28 @@ Singleton {
   // - Turning shadow off
   // - Turning animation off
   // - Do Not Disturb
-  function toggleNoctaliaPerformance() {
+  property bool _inhibitPerformanceToast: false
+
+  function toggleNoctaliaPerformance(quiet = false) {
+    _inhibitPerformanceToast = quiet;
     noctaliaPerformanceMode = !noctaliaPerformanceMode;
   }
 
-  function setNoctaliaPerformance(value) {
+  function setNoctaliaPerformance(value, quiet = false) {
+    if (noctaliaPerformanceMode === value) {
+      _inhibitPerformanceToast = false;
+      return;
+    }
+    _inhibitPerformanceToast = quiet;
     noctaliaPerformanceMode = value;
   }
 
   onNoctaliaPerformanceModeChanged: {
+    if (_inhibitPerformanceToast) {
+      _inhibitPerformanceToast = false;
+      return;
+    }
+
     if (noctaliaPerformanceMode) {
       ToastService.showNotice(I18n.tr("toast.noctalia-performance.label"), I18n.tr("toast.noctalia-performance.enabled"), "rocket");
     } else {
