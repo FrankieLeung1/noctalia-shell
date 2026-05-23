@@ -339,9 +339,11 @@ Item {
           continue;
         const windowData = extractWindowData(toplevel);
         if (windowData) {
-          // If the window claims to be focused, verify it's on an active workspace
+          // If the window claims to be focused, verify it's on an active workspace.
+          // Bypass this check for special workspaces (scratchpads) which are active when focused
+          // but are not included in the standard active workspaces list.
           if (windowData.isFocused) {
-            if (!activeWorkspaceIds[windowData.workspaceId]) {
+            if (!windowData.isSpecial && !activeWorkspaceIds[windowData.workspaceId]) {
               windowData.isFocused = false;
             }
           }
@@ -353,6 +355,7 @@ Item {
             "appId": windowData.appId ? String(windowData.appId) : "",
             "workspaceId": (typeof windowData.workspaceId === "number" && !isNaN(windowData.workspaceId)) ? windowData.workspaceId : -1,
             "isFocused": windowData.isFocused === true,
+            "isSpecial": windowData.isSpecial === true,
             "output": windowData.output ? String(windowData.output) : "",
             "x": (typeof windowData.x === "number" && !isNaN(windowData.x)) ? windowData.x : 0,
             "y": (typeof windowData.y === "number" && !isNaN(windowData.y)) ? windowData.y : 0,
@@ -404,6 +407,8 @@ Item {
       const appId = getAppId(toplevel);
       const title = getAppTitle(toplevel);
       const wsId = toplevel.workspace ? toplevel.workspace.id : null;
+      const wsName = (toplevel.workspace && toplevel.workspace.name) ? toplevel.workspace.name : "";
+      const isSpecial = wsName.startsWith("special:") || (wsId !== null && wsId < 0);
       const focused = toplevel.activated === true;
       const output = toplevel.monitor?.name || "";
 
@@ -436,6 +441,7 @@ Item {
         "appId": appId,
         "workspaceId": wsId || -1,
         "isFocused": focused,
+        "isSpecial": isSpecial,
         "output": output,
         "x": safeX,
         "y": safeY,
