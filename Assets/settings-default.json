@@ -542,6 +542,7 @@
   "idle": {
     "enabled": false,
     "screenOffTimeout": 600,
+    "lockScreenOffTimeout": 10,
     "lockTimeout": 660,
     "suspendTimeout": 1800,
     "fadeDuration": 5,

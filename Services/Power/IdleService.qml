@@ -28,6 +28,14 @@ Singleton {
   // True if ext-idle-notify-v1 is supported by the compositor
   readonly property bool nativeIdleMonitorAvailable: _monitorsCreated
 
+  // Dynamic lock status
+  readonly property bool isLocked: PanelService.lockScreen ? PanelService.lockScreen.active : false
+
+  onIsLockedChanged: {
+    Logger.i("IdleService", "Lock screen active status changed to:", isLocked);
+    _applyTimeouts();
+  }
+
   // Live idle time in seconds (updated by the 1s heartbeat monitor)
   property int idleSeconds: 0
 
@@ -132,8 +140,11 @@ Singleton {
 
   function _isStageEnabled(stage) {
     const idle = Settings.data.idle;
-    if (stage === "screenOff")
+    if (stage === "screenOff") {
+      if (isLocked && idle.lockScreenOffTimeout > 0)
+        return true;
       return idle.screenOffTimeout > 0;
+    }
     if (stage === "lock")
       return idle.lockTimeout > 0;
     if (stage === "suspend")
@@ -228,6 +239,9 @@ Singleton {
     function onScreenOffTimeoutChanged() {
       root._applyTimeouts();
     }
+    function onLockScreenOffTimeoutChanged() {
+      root._applyTimeouts();
+    }
     function onLockTimeoutChanged() {
       root._applyTimeouts();
     }
@@ -246,8 +260,14 @@ Singleton {
     const idle = Settings.data.idle;
     const globalEnabled = idle.enabled;
 
-    _setMonitor("screenOff", globalEnabled ? idle.screenOffTimeout : 0);
-    _setMonitor("lock", globalEnabled ? idle.lockTimeout : 0);
+    let screenOffSec = idle.screenOffTimeout;
+    if (globalEnabled && isLocked && idle.lockScreenOffTimeout > 0) {
+      screenOffSec = idle.lockScreenOffTimeout;
+      Logger.i("IdleService", "Applying locked screen-off timeout of", screenOffSec, "seconds");
+    }
+
+    _setMonitor("screenOff", globalEnabled ? screenOffSec : 0);
+    _setMonitor("lock", globalEnabled && !isLocked ? idle.lockTimeout : 0);
     _setMonitor("suspend", globalEnabled ? idle.suspendTimeout : 0);
     _ensureHeartbeat();
     _applyCustomMonitors();

@@ -787,6 +787,7 @@ Singleton {
     property JsonObject idle: JsonObject {
       property bool enabled: false
       property int screenOffTimeout: 600    // seconds, 0 = disabled
+      property int lockScreenOffTimeout: 10 // seconds, 0 = disabled
       property int lockTimeout: 660         // seconds, 0 = disabled
       property int suspendTimeout: 1800     // seconds, 0 = disabled
       property int fadeDuration: 5       // seconds of fade-to-black before action fires
