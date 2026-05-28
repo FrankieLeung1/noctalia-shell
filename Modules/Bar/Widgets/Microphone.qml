@@ -173,7 +173,7 @@ Item {
       }
     }
     onClicked: {
-      PanelService.getPanel("audioPanel", screen)?.toggle(this);
+      AudioService.setInputMuted(!AudioService.inputMuted);
     }
     onRightClicked: {
       PanelService.showContextMenu(contextMenu, pill, screen);
