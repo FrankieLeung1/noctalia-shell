@@ -53,13 +53,13 @@ Item {
       Hyprland.refreshWorkspaces();
       Hyprland.refreshToplevels();
       Qt.callLater(() => {
-                     safeUpdateWorkspaces();
-                     safeUpdateWindows();
-                     queryDisplayScales();
-                     queryKeyboardLayout();
-                     // Detect Hyprland dispatch syntax once during startup
-                     detectDispatchMode();
-                   });
+        safeUpdateWorkspaces();
+        safeUpdateWindows();
+        queryDisplayScales();
+        queryKeyboardLayout();
+        // Detect Hyprland dispatch syntax once during startup
+        detectDispatchMode();
+      });
       initialized = true;
       Logger.i("HyprlandService", "Service started");
     } catch (e) {
@@ -454,21 +454,21 @@ Item {
 
   function toSortedWindowList(windowList) {
     return windowList.sort((a, b) => {
-                             // Sort by workspace first (just in case they are mixed)
-                             if (a.workspaceId !== b.workspaceId) {
-                               return a.workspaceId - b.workspaceId;
-                             }
-                             // Then sort by X position (left to right)
-                             if (a.x !== b.x) {
-                               return a.x - b.x;
-                             }
-                             // Then sort by Y position (top to bottom)
-                             if (a.y !== b.y) {
-                               return a.y - b.y;
-                             }
-                             // Fallback to Window ID mapping
-                             return a.id.localeCompare(b.id);
-                           });
+      // Sort by workspace first (just in case they are mixed)
+      if (a.workspaceId !== b.workspaceId) {
+        return a.workspaceId - b.workspaceId;
+      }
+      // Then sort by X position (left to right)
+      if (a.x !== b.x) {
+        return a.x - b.x;
+      }
+      // Then sort by Y position (top to bottom)
+      if (a.y !== b.y) {
+        return a.y - b.y;
+      }
+      // Fallback to Window ID mapping
+      return a.id.localeCompare(b.id);
+    });
   }
 
   function getAppTitle(toplevel) {
@@ -678,9 +678,15 @@ Item {
 
   function closeWindow(window) {
     try {
-      const addr = `address:0x${window.id}`;
+      if (!window || !window.id) {
+        Logger.w("HyprlandService", "Invalid window object for close");
+        return;
+      }
 
-      dispatchCommand("killwindow", addr, `hl.dsp.window.close("${luaQuote(addr)}")`);
+      const windowId = window.id.toString();
+      const addr = `address:0x${windowId}`;
+
+      dispatchCommand("killwindow", addr, `hl.dsp.window.close({ window = "${luaQuote(addr)}" })`);
     } catch (e) {
       Logger.e("HyprlandService", "Failed to close window:", e);
     }

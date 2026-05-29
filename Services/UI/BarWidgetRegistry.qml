@@ -13,6 +13,7 @@ Singleton {
   // Widget registry object mapping widget names to components
   property var widgets: ({
                            "ActiveWindow": activeWindowComponent,
+                           "ActiveWindowPwd": activeWindowPwdComponent,
                            "AudioVisualizer": audioVisualizerComponent,
                            "Battery": batteryComponent,
                            "Bluetooth": bluetoothComponent,
@@ -46,6 +47,7 @@ Singleton {
 
   property var widgetSettingsMap: ({
                                      "ActiveWindow": "WidgetSettings/ActiveWindowSettings.qml",
+                                     "ActiveWindowPwd": "WidgetSettings/ActiveWindowPwdSettings.qml",
                                      "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml",
                                      "Battery": "WidgetSettings/BatterySettings.qml",
                                      "Bluetooth": "WidgetSettings/BluetoothSettings.qml",
@@ -87,6 +89,17 @@ Singleton {
                                     "useFixedWidth": false,
                                     "colorizeIcons": false,
                                     "textColor": "none"
+                                  },
+                                  "ActiveWindowPwd": {
+                                    "showText": true,
+                                    "showIcon": true,
+                                    "hideMode": "hidden",
+                                    "scrollingMode": "hover",
+                                    "maxWidth": 145,
+                                    "useFixedWidth": false,
+                                    "colorizeIcons": false,
+                                    "textColor": "none",
+                                    "disableResizeAnimation": false
                                   },
                                   "AudioVisualizer": {
                                     "width": 200,
@@ -325,6 +338,9 @@ Singleton {
   // Component definitions - these are loaded once at startup
   property Component activeWindowComponent: Component {
     ActiveWindow {}
+  }
+  property Component activeWindowPwdComponent: Component {
+    ActiveWindowPwd {}
   }
   property Component audioVisualizerComponent: Component {
     AudioVisualizer {}
