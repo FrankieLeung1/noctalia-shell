@@ -20,6 +20,9 @@ ColumnLayout {
   // Deprecated: hideWhenIdle now folded into hideMode = "idle"
   property bool valueHideWhenIdle: widgetData.hideWhenIdle !== undefined ? widgetData.hideWhenIdle : widgetMetadata.hideWhenIdle
   property bool valueShowAlbumArt: widgetData.showAlbumArt !== undefined ? widgetData.showAlbumArt : widgetMetadata.showAlbumArt
+  property bool valueShowSourceIcon: widgetData.showSourceIcon !== undefined ? widgetData.showSourceIcon : widgetMetadata.showSourceIcon
+  property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property real valueIconOpacity: widgetData.iconOpacity !== undefined ? widgetData.iconOpacity : (widgetMetadata.iconOpacity !== undefined ? widgetMetadata.iconOpacity : 1.0)
   property bool valuePanelShowAlbumArt: widgetData.panelShowAlbumArt !== undefined ? widgetData.panelShowAlbumArt : widgetMetadata.panelShowAlbumArt
   property bool valueShowArtistFirst: widgetData.showArtistFirst !== undefined ? widgetData.showArtistFirst : widgetMetadata.showArtistFirst
   property bool valueShowVisualizer: widgetData.showVisualizer !== undefined ? widgetData.showVisualizer : widgetMetadata.showVisualizer
@@ -30,18 +33,21 @@ ColumnLayout {
   property bool valueShowProgressRing: widgetData.showProgressRing !== undefined ? widgetData.showProgressRing : widgetMetadata.showProgressRing
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
-
+ 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
       valueHideMode = widgetData.hideMode;
     }
   }
-
+ 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.hideMode = valueHideMode;
     // No longer store hideWhenIdle separately; kept for backward compatibility only
     settings.showAlbumArt = valueShowAlbumArt;
+    settings.showSourceIcon = valueShowSourceIcon;
+    settings.colorizeIcons = valueColorizeIcons;
+    settings.iconOpacity = valueIconOpacity;
     settings.panelShowAlbumArt = valuePanelShowAlbumArt;
     settings.showArtistFirst = valueShowArtistFirst;
     settings.showVisualizer = valueShowVisualizer;
@@ -79,9 +85,9 @@ ColumnLayout {
     ]
     currentKey: root.valueHideMode
     onSelected: key => {
-                  root.valueHideMode = key;
-                  saveSettings();
-                }
+      root.valueHideMode = key;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.hideMode
   }
 
@@ -90,10 +96,48 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.show-album-art-description")
     checked: valueShowAlbumArt
     onToggled: checked => {
-                 valueShowAlbumArt = checked;
-                 saveSettings();
-               }
+      valueShowAlbumArt = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.showAlbumArt
+  }
+
+  NToggle {
+    label: I18n.tr("bar.media-mini.show-source-icon-label")
+    description: I18n.tr("bar.media-mini.show-source-icon-description")
+    checked: valueShowSourceIcon
+    onToggled: checked => {
+      valueShowSourceIcon = checked;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.showSourceIcon
+  }
+
+  NToggle {
+    label: I18n.tr("bar.media-mini.colorize-icons-label")
+    description: I18n.tr("bar.media-mini.colorize-icons-description")
+    checked: valueColorizeIcons
+    onToggled: checked => {
+      valueColorizeIcons = checked;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.colorizeIcons
+  }
+
+  NValueSlider {
+    label: I18n.tr("bar.media-mini.icon-opacity-label")
+    description: I18n.tr("bar.media-mini.icon-opacity-description")
+    from: 0
+    to: 1
+    stepSize: 0.01
+    showReset: true
+    value: valueIconOpacity
+    defaultValue: widgetMetadata.iconOpacity !== undefined ? widgetMetadata.iconOpacity : 1.0
+    onMoved: value => {
+      valueIconOpacity = value;
+      saveSettings();
+    }
+    text: Math.floor(valueIconOpacity * 100) + "%"
   }
 
   NToggle {
@@ -101,9 +145,9 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.show-artist-first-description")
     checked: valueShowArtistFirst
     onToggled: checked => {
-                 valueShowArtistFirst = checked;
-                 saveSettings();
-               }
+      valueShowArtistFirst = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.showArtistFirst
   }
 
@@ -112,9 +156,9 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.show-visualizer-description")
     checked: valueShowVisualizer
     onToggled: checked => {
-                 valueShowVisualizer = checked;
-                 saveSettings();
-               }
+      valueShowVisualizer = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.showVisualizer
   }
 
@@ -138,9 +182,9 @@ ColumnLayout {
     ]
     currentKey: valueVisualizerType
     onSelected: key => {
-                  valueVisualizerType = key;
-                  saveSettings();
-                }
+      valueVisualizerType = key;
+      saveSettings();
+    }
     minimumWidth: 200
     defaultValue: widgetMetadata.visualizerType
   }
@@ -161,9 +205,9 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.use-fixed-width-description")
     checked: valueUseFixedWidth
     onToggled: checked => {
-                 valueUseFixedWidth = checked;
-                 saveSettings();
-               }
+      valueUseFixedWidth = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.useFixedWidth
   }
 
@@ -172,18 +216,18 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.show-progress-ring-description")
     checked: valueShowProgressRing
     onToggled: checked => {
-                 valueShowProgressRing = checked;
-                 saveSettings();
-               }
+      valueShowProgressRing = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.showProgressRing
   }
 
   NColorChoice {
     currentKey: valueTextColor
     onSelected: key => {
-                  valueTextColor = key;
-                  saveSettings();
-                }
+      valueTextColor = key;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.textColor
   }
 
@@ -206,9 +250,9 @@ ColumnLayout {
     ]
     currentKey: valueScrollingMode
     onSelected: key => {
-                  valueScrollingMode = key;
-                  saveSettings();
-                }
+      valueScrollingMode = key;
+      saveSettings();
+    }
     minimumWidth: 200
     defaultValue: widgetMetadata.scrollingMode
   }
@@ -229,9 +273,9 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.show-album-art-description")
     checked: valuePanelShowAlbumArt
     onToggled: checked => {
-                 valuePanelShowAlbumArt = checked;
-                 saveSettings();
-               }
+      valuePanelShowAlbumArt = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.panelShowAlbumArt
   }
 
@@ -240,9 +284,9 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.compact-mode-description")
     checked: valueCompactMode
     onToggled: checked => {
-                 valueCompactMode = checked;
-                 saveSettings();
-               }
+      valueCompactMode = checked;
+      saveSettings();
+    }
     defaultValue: widgetMetadata.compactMode
   }
 }

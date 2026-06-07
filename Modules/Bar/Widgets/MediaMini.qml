@@ -43,6 +43,9 @@ Item {
   readonly property string hideMode: widgetSettings.hideMode !== undefined ? widgetSettings.hideMode : widgetMetadata.hideMode
   readonly property bool hideWhenIdle: widgetSettings.hideWhenIdle !== undefined ? widgetSettings.hideWhenIdle : widgetMetadata.hideWhenIdle
   readonly property bool showAlbumArt: widgetSettings.showAlbumArt !== undefined ? widgetSettings.showAlbumArt : widgetMetadata.showAlbumArt
+  readonly property bool showSourceIcon: widgetSettings.showSourceIcon !== undefined ? widgetSettings.showSourceIcon : widgetMetadata.showSourceIcon
+  readonly property bool colorizeIcons: widgetSettings.colorizeIcons !== undefined ? widgetSettings.colorizeIcons : widgetMetadata.colorizeIcons
+  readonly property real iconOpacity: widgetSettings.iconOpacity !== undefined ? widgetSettings.iconOpacity : (widgetMetadata.iconOpacity !== undefined ? widgetMetadata.iconOpacity : 1.0)
   readonly property bool showArtistFirst: widgetSettings.showArtistFirst !== undefined ? widgetSettings.showArtistFirst : widgetMetadata.showArtistFirst
   readonly property bool showVisualizer: widgetSettings.showVisualizer !== undefined ? widgetSettings.showVisualizer : widgetMetadata.showVisualizer
   readonly property string visualizerType: widgetSettings.visualizerType !== undefined ? widgetSettings.visualizerType : widgetMetadata.visualizerType
@@ -54,8 +57,8 @@ Item {
   readonly property color textColor: Color.resolveColorKey(textColorKey)
 
   // Dimensions
-  readonly property int artSize: Style.toOdd(capsuleHeight * 0.75)
-  readonly property int iconSize: Style.toOdd(capsuleHeight * 0.75)
+  readonly property int artSize: Style.toOdd(capsuleHeight - Style.capsuleBorderWidth * 2)
+  readonly property int iconSize: Style.toOdd(capsuleHeight - Style.capsuleBorderWidth * 2)
   readonly property int verticalSize: Style.toOdd(capsuleHeight * 0.85)
   readonly property int progressWidth: 2
 
@@ -64,6 +67,15 @@ Item {
   readonly property bool shouldHideIdle: (hideMode === "idle" || hideWhenIdle) && !MediaService.isPlaying
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
   readonly property bool isHidden: shouldHideIdle || shouldHideEmpty
+  readonly property string mediaIconPath: {
+    if (!hasPlayer)
+      return "";
+    if (showSourceIcon) {
+      const appId = MediaService.playerDesktopEntry || MediaService.playerIdentity || "";
+      return ThemeIcons.iconForAppId(appId, "audio-x-generic");
+    }
+    return MediaService.trackArtUrl;
+  }
 
   // Title
   readonly property string title: {
@@ -118,7 +130,7 @@ Item {
     var iconWidth = 0;
     if (!hasPlayer) {
       iconWidth = iconSize;
-    } else if (showAlbumArt || showProgressRing) {
+    } else if (showAlbumArt || showSourceIcon || showProgressRing) {
       iconWidth = artSize;
     }
 
@@ -210,24 +222,24 @@ Item {
     }
 
     onTriggered: action => {
-                   contextMenu.close();
-                   PanelService.closeContextMenu(screen);
+      contextMenu.close();
+      PanelService.closeContextMenu(screen);
 
-                   if (action === "play-pause")
-                   MediaService.playPause();
-                   else if (action === "previous")
-                   MediaService.previous();
-                   else if (action === "next")
-                   MediaService.next();
-                   else if (action && action.indexOf("player-") === 0) {
-                     var idx = parseInt(action.split("-")[1]);
-                     if (!isNaN(idx)) {
-                       MediaService.switchToPlayer(idx);
-                     }
-                   } else if (action === "widget-settings") {
-                     BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
-                   }
-                 }
+      if (action === "play-pause")
+        MediaService.playPause();
+      else if (action === "previous")
+        MediaService.previous();
+      else if (action === "next")
+        MediaService.next();
+      else if (action && action.indexOf("player-") === 0) {
+        var idx = parseInt(action.split("-")[1]);
+        if (!isNaN(idx)) {
+          MediaService.switchToPlayer(idx);
+        }
+      } else if (action === "widget-settings") {
+        BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+      }
+    }
   }
 
   // Main container - stays at content size, pixel-perfect centered in parent
@@ -267,7 +279,7 @@ Item {
         width: Style.toOdd(parent.width)
         height: Style.toOdd(parent.height)
         active: showVisualizer
-        z: 0
+        z: 1
         sourceComponent: {
           if (!showVisualizer)
             return null;
@@ -281,76 +293,85 @@ Item {
         }
       }
 
-      // Horizontal layout
-      RowLayout {
-        anchors.fill: parent
+      // Horizontal layout - Art/Icon Container
+      Item {
+        id: mediaArtContainer
+        visible: !isVertical && ((hasPlayer && (showAlbumArt || showSourceIcon || showProgressRing)) || !hasPlayer)
+        Layout.preferredWidth: visible ? artSize : 0
+        Layout.preferredHeight: visible ? artSize : 0
+        width: visible ? artSize : 0
+        height: visible ? artSize : 0
+        anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Style.marginS
-        visible: !isVertical
-        z: 1
+        z: 0 // Behind visualizer
 
-        // Album art / Progress ring / Default Icon
-        Item {
-          visible: (hasPlayer && (showAlbumArt || showProgressRing)) || !hasPlayer
-          Layout.preferredWidth: visible ? artSize : 0
-          Layout.preferredHeight: visible ? artSize : 0
-          Layout.alignment: Qt.AlignVCenter
-
-          NIcon {
-            visible: !hasPlayer
-            anchors.centerIn: parent
-            icon: "music"
-            pointSize: barFontSize
-            color: Color.mOnSurfaceVariant
-          }
-
-          ProgressRing {
-            id: progressRing
-            anchors.fill: parent
-            visible: hasPlayer && showProgressRing
-            progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
-            lineWidth: root.progressWidth
-          }
-
-          NImageRounded {
-            visible: showAlbumArt && hasPlayer
-            anchors.fill: parent
-            anchors.margins: (showProgressRing && hasPlayer) ? root.progressWidth * 2 : 0
-            radius: width / 2
-            imagePath: MediaService.trackArtUrl
-            borderWidth: 0
-            imageFillMode: Image.PreserveAspectCrop
-          }
+        NIcon {
+          visible: !hasPlayer
+          anchors.centerIn: parent
+          icon: "music"
+          pointSize: barFontSize
+          color: Color.mOnSurfaceVariant
+          opacity: iconOpacity
         }
 
-        // Scrolling title
-        NScrollText {
-          id: titleContainer
-          Layout.fillWidth: true
-          Layout.alignment: Qt.AlignVCenter
-          Layout.preferredHeight: capsuleHeight
-          fadeRoundLeftCorners: !((hasPlayer && (showAlbumArt || showProgressRing)) || !hasPlayer)
+        ProgressRing {
+          id: progressRing
+          anchors.fill: parent
+          visible: hasPlayer && showProgressRing
+          progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
+          lineWidth: root.progressWidth
+        }
 
-          text: title
+        NImageRounded {
+          visible: (showAlbumArt || showSourceIcon) && hasPlayer
+          anchors.fill: parent
+          anchors.margins: (showProgressRing && hasPlayer) ? root.progressWidth * 2 : 0
+          radius: width / 2
+          imagePath: mediaIconPath
+          borderWidth: 0
+          imageFillMode: Image.PreserveAspectCrop
+          opacity: iconOpacity
 
-          scrollMode: {
-            if (scrollingMode === "always")
-              return NScrollText.ScrollMode.Always;
-            if (scrollingMode === "hover")
-              return NScrollText.ScrollMode.Hover;
-            return NScrollText.ScrollMode.Never;
+          layer.enabled: colorizeIcons && !mainMouseArea.containsMouse
+          layer.effect: ShaderEffect {
+            property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
+            property real colorizeMode: 0
+            fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
           }
-          cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
-          maxWidth: root.maxWidth - root.mainContentWidth
-          forcedHover: mainMouseArea.containsMouse
-          fadeExtent: 0.1
-          fadeCornerRadius: Style.radiusM
+        }
+      }
 
-          NText {
-            color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
-            pointSize: barFontSize
-            elide: Text.ElideNone
-          }
+      // Horizontal layout - Scrolling Title
+      NScrollText {
+        id: titleContainer
+        visible: !isVertical
+        anchors.left: mediaArtContainer.visible ? mediaArtContainer.right : parent.left
+        anchors.leftMargin: mediaArtContainer.visible ? Style.marginS : 0
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: capsuleHeight
+        fadeRoundLeftCorners: !mediaArtContainer.visible
+        z: 2 // In front of visualizer
+
+        text: title
+
+        scrollMode: {
+          if (scrollingMode === "always")
+            return NScrollText.ScrollMode.Always;
+          if (scrollingMode === "hover")
+            return NScrollText.ScrollMode.Hover;
+          return NScrollText.ScrollMode.Never;
+        }
+        cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
+        maxWidth: root.maxWidth - root.mainContentWidth
+        forcedHover: mainMouseArea.containsMouse
+        fadeExtent: 0.1
+        fadeCornerRadius: Style.radiusM
+
+        NText {
+          color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
+          pointSize: barFontSize
+          elide: Text.ElideNone
         }
       }
 
@@ -362,7 +383,7 @@ Item {
         height: Style.toOdd(width)
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
-        z: 1
+        z: 0 // Behind visualizer
 
         NIcon {
           visible: !hasPlayer
@@ -370,6 +391,7 @@ Item {
           icon: "music"
           pointSize: barFontSize
           color: Color.mOnSurfaceVariant
+          opacity: iconOpacity
         }
 
         ProgressRing {
@@ -380,13 +402,21 @@ Item {
         }
 
         NImageRounded {
-          visible: showAlbumArt && hasPlayer
+          visible: (showAlbumArt || showSourceIcon) && hasPlayer
           anchors.fill: parent
           anchors.margins: (showProgressRing && hasPlayer) ? root.progressWidth * 2 : 0
           radius: width / 2
-          imagePath: MediaService.trackArtUrl
+          imagePath: mediaIconPath
           borderWidth: 0
           imageFillMode: Image.PreserveAspectCrop
+          opacity: iconOpacity
+
+          layer.enabled: colorizeIcons && !mainMouseArea.containsMouse
+          layer.effect: ShaderEffect {
+            property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
+            property real colorizeMode: 0
+            fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+          }
         }
       }
 
@@ -410,19 +440,39 @@ Item {
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.ForwardButton | Qt.BackButton
 
     onClicked: mouse => {
-                 TooltipService.hide();
-                 if (mouse.button === Qt.LeftButton && hasPlayer) {
-                   MediaService.playPause();
-                 } else if (mouse.button === Qt.RightButton) {
-                   PanelService.showContextMenu(contextMenu, container, screen);
-                 } else if (mouse.button === Qt.MiddleButton) {
-                   PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
-                 } else if (mouse.button === Qt.ForwardButton && hasPlayer) {
-                   MediaService.next();
-                 } else if (mouse.button === Qt.BackButton && hasPlayer) {
-                   MediaService.previous();
-                 }
-               }
+      TooltipService.hide();
+      if (mouse.button === Qt.LeftButton && hasPlayer) {
+        MediaService.playPause();
+      } else if (mouse.button === Qt.RightButton) {
+        PanelService.showContextMenu(contextMenu, container, screen);
+      } else if (mouse.button === Qt.MiddleButton) {
+        PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
+      } else if (mouse.button === Qt.ForwardButton && hasPlayer) {
+        MediaService.next();
+      } else if (mouse.button === Qt.BackButton && hasPlayer) {
+        MediaService.previous();
+      }
+    }
+
+    onWheel: wheel => {
+      var players = MediaService.getAvailablePlayers ? MediaService.getAvailablePlayers() : [];
+      if (players.length > 1) {
+        var newIndex = MediaService.selectedPlayerIndex;
+        if (wheel.angleDelta.y > 0) {
+          newIndex = (newIndex - 1 + players.length) % players.length;
+        } else if (wheel.angleDelta.y < 0) {
+          newIndex = (newIndex + 1) % players.length;
+        }
+        MediaService.switchToPlayer(newIndex);
+
+        // Update the tooltip to show the newly switched player/track details
+        var panel = PanelService.getPanel("mediaPlayerPanel", screen);
+        if (panel && !panel.isPanelOpen) {
+          TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
+        }
+      }
+      wheel.accepted = true;
+    }
 
     onEntered: {
       if (!root || !screen) {

@@ -27,6 +27,7 @@ Singleton {
 
   property var currentPlayer: null
   property string playerIdentity: currentPlayer ? (currentPlayer.identity || "") : ""
+  property string playerDesktopEntry: currentPlayer ? (currentPlayer.desktopEntry || "") : ""
   property real currentPosition: 0
   property bool isSeeking: false
   property int selectedPlayerIndex: 0
@@ -68,9 +69,9 @@ Singleton {
       const identity = String(allPlayers[i].identity || "").toLowerCase();
       const dbusName = String(allPlayers[i].dbusName || "").toLowerCase();
       const match = blacklist.find(b => {
-                                     const s = String(b || "").toLowerCase();
-                                     return s && (identity.includes(s) || dbusName.includes(s));
-                                   });
+        const s = String(b || "").toLowerCase();
+        return s && (identity.includes(s) || dbusName.includes(s));
+      });
       if (match)
         continue;
       if (genericBrowsers.some(b => identity.includes(b))) {
