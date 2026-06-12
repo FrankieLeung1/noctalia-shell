@@ -4,12 +4,14 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.UI
 
 Singleton {
   id: root
 
   property bool isInhibited: false
+  property bool isManuallyInhibited: false
   property string reason: I18n.tr("system.user-requested")
   property var activeInhibitors: []
   property var timeout: null // in seconds
@@ -51,6 +53,7 @@ Singleton {
 
   // Update the actual system inhibition
   function updateInhibition(newReason = reason) {
+    isManuallyInhibited = activeInhibitors.includes("manual");
     const shouldInhibit = activeInhibitors.length > 0;
 
     if (shouldInhibit === isInhibited) {
@@ -210,6 +213,63 @@ Singleton {
       inhibitorTimeout.stop();
       Logger.i("IdleInhibitor", "Manual inhibition timeout cleared");
       return;
+    }
+  }
+
+  Timer {
+    id: hyprlandPollTimer
+    interval: 5000 // 5 seconds
+    repeat: true
+    running: CompositorService.isHyprland
+    triggeredOnStart: true
+    onTriggered: {
+      if (!hyprlandClientsProcess.running) {
+        hyprlandClientsProcess.running = true;
+      }
+    }
+  }
+
+  Process {
+    id: hyprlandClientsProcess
+    running: false
+    command: ["hyprctl", "clients", "-j"]
+    property string accumulatedOutput: ""
+
+    stdout: SplitParser {
+      onRead: function (line) {
+        hyprlandClientsProcess.accumulatedOutput += line;
+      }
+    }
+
+    onExited: function (exitCode) {
+      if (exitCode !== 0 || !accumulatedOutput) {
+        accumulatedOutput = "";
+        return;
+      }
+
+      try {
+        const clients = JSON.parse(accumulatedOutput);
+        var hasInhibitor = false;
+        for (var i = 0; i < clients.length; i++) {
+          if (clients[i].inhibitingIdle === true) {
+            hasInhibitor = true;
+            break;
+          }
+        }
+
+        if (hasInhibitor) {
+          if (!activeInhibitors.includes("hyprland-external")) {
+            addInhibitor("hyprland-external", "External application inhibiting idle");
+          }
+        } else {
+          if (activeInhibitors.includes("hyprland-external")) {
+            removeInhibitor("hyprland-external");
+          }
+        }
+      } catch (e) {
+        Logger.e("IdleInhibitor", "Failed to parse hyprctl clients JSON: " + e);
+      }
+      accumulatedOutput = "";
     }
   }
 

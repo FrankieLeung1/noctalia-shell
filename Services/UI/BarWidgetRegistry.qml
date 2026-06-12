@@ -180,8 +180,8 @@ Singleton {
                                     "iconColor": "none"
                                   },
                                   "KeepAwake": {
-                                    "iconColor": "none",
-                                    "textColor": "none"
+                                    "inactiveColor": "none",
+                                    "activeColor": "none"
                                   },
                                   "KeyboardLayout": {
                                     "displayMode": "onhover",

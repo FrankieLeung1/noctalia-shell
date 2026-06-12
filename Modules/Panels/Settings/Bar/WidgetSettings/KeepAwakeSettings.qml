@@ -14,32 +14,33 @@ ColumnLayout {
 
   signal settingsChanged(var settings)
 
-  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
-  property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
+  property string valueInactiveColor: widgetData.inactiveColor !== undefined ? widgetData.inactiveColor : widgetMetadata.inactiveColor
+  property string valueActiveColor: widgetData.activeColor !== undefined ? widgetData.activeColor : widgetMetadata.activeColor
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
-    settings.iconColor = valueIconColor;
-    settings.textColor = valueTextColor;
+    settings.inactiveColor = valueInactiveColor;
+    settings.activeColor = valueActiveColor;
     settingsChanged(settings);
   }
 
   NColorChoice {
-    label: I18n.tr("common.select-icon-color")
-    currentKey: valueIconColor
+    label: I18n.tr("bar.keep-awake.select-inactive-color-label")
+    currentKey: valueInactiveColor
     onSelected: key => {
-                  valueIconColor = key;
-                  saveSettings();
-                }
-    defaultValue: widgetMetadata.iconColor
+      valueInactiveColor = key;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.inactiveColor
   }
 
   NColorChoice {
-    currentKey: valueTextColor
+    label: I18n.tr("bar.keep-awake.select-active-color-label")
+    currentKey: valueActiveColor
     onSelected: key => {
-                  valueTextColor = key;
-                  saveSettings();
-                }
-    defaultValue: widgetMetadata.textColor
+      valueActiveColor = key;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.activeColor
   }
 }

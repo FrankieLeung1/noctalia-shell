@@ -171,6 +171,10 @@
       "wheel-up-label": "Wheel up command",
       "wheel-update-text": "Update displayed text on scroll"
     },
+    "keep-awake": {
+      "select-inactive-color-label": "Inactive (allow sleep) colour",
+      "select-active-color-label": "Active (keep awake) colour"
+    },
     "keyboard-layout": {
       "show-icon-description": "Display the keyboard layout icon."
     },
@@ -529,6 +533,7 @@
     "select-color": "Select colour",
     "select-color-description": "Apply theme colors for emphasis.",
     "select-icon-color": "Select icon colour",
+    "select-active-color": "Select active colour",
     "select-text-color": "Select text colour",
     "settings": "Settings",
     "shortcuts": "Shortcuts",
