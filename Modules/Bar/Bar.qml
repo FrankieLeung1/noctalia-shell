@@ -318,6 +318,36 @@ Item {
         }
 
         function switchWorkspaceByOffset(offset) {
+          if (CompositorService.isHyprland) {
+            var currentWs = CompositorService.getCurrentWorkspace();
+            if (!currentWs)
+              return;
+            var currentIdx = currentWs.idx;
+
+            var maxIdx = 10;
+            for (var i = 0; i < CompositorService.workspaces.count; i++) {
+              var tempWs = CompositorService.workspaces.get(i);
+              if (tempWs.idx && tempWs.idx > maxIdx) {
+                maxIdx = tempWs.idx;
+              }
+            }
+
+            var nextIdx = currentIdx + offset;
+            var wrap = Settings.data.bar.mouseWheelWrap !== undefined ? Settings.data.bar.mouseWheelWrap : true;
+            if (wrap) {
+              nextIdx = ((nextIdx - 1) % maxIdx);
+              if (nextIdx < 0)
+                nextIdx += maxIdx;
+              nextIdx += 1;
+            } else {
+              if (nextIdx < 1 || nextIdx > maxIdx)
+                return;
+            }
+
+            CompositorService.switchToWorkspace({ idx: nextIdx });
+            return;
+          }
+
           if (!root.screen || CompositorService.workspaces.count === 0)
             return;
 

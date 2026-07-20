@@ -228,27 +228,77 @@ Item {
   }
 
   function switchByOffset(offset) {
-    if (localWorkspaces.count <= 1)
+    if (CompositorService.isHyprland) {
+      var currentWs = CompositorService.getCurrentWorkspace();
+      if (!currentWs)
+        return;
+      var currentIdx = currentWs.idx;
+
+      var maxIdx = 10;
+      for (var i = 0; i < CompositorService.workspaces.count; i++) {
+        var tempWs = CompositorService.workspaces.get(i);
+        if (tempWs.idx && tempWs.idx > maxIdx) {
+          maxIdx = tempWs.idx;
+        }
+      }
+
+      var nextIdx = currentIdx + offset;
+      var wrap = Settings.data.bar.mouseWheelWrap !== undefined ? Settings.data.bar.mouseWheelWrap : true;
+      if (wrap) {
+        nextIdx = ((nextIdx - 1) % maxIdx);
+        if (nextIdx < 0)
+          nextIdx += maxIdx;
+        nextIdx += 1;
+      } else {
+        if (nextIdx < 1 || nextIdx > maxIdx)
+          return;
+      }
+
+      CompositorService.switchToWorkspace({ idx: nextIdx });
       return;
-    // Build list of switchable indices (exclude synthetic pills)
-    var indices = [];
-    for (var k = 0; k < localWorkspaces.count; k++) {
-      const candidate = localWorkspaces.get(k);
-      if (candidate && !candidate.isVirtual)
-        indices.push(k);
     }
-    if (indices.length <= 1)
+
+    if (CompositorService.workspaces.count <= 1)
       return;
-    var current = getFocusedLocalIndex();
-    var currentPos = indices.indexOf(current);
-    if (currentPos < 0)
-      currentPos = 0;
-    var nextPos = (currentPos + offset) % indices.length;
-    if (nextPos < 0)
-      nextPos += indices.length;
-    if (nextPos === currentPos)
+
+    var focusedOutput = null;
+    if (followFocusedScreen) {
+      for (var i = 0; i < CompositorService.workspaces.count; i++) {
+        const ws = CompositorService.workspaces.get(i);
+        if (ws.isFocused)
+          focusedOutput = ws.output.toLowerCase();
+      }
+    }
+
+    var screenNameLower = screenName ? screenName.toLowerCase() : "";
+    var candidates = [];
+    var current = -1;
+
+    for (var k = 0; k < CompositorService.workspaces.count; k++) {
+      const ws = CompositorService.workspaces.get(k);
+      const matchesScreen = CompositorService.globalWorkspaces || (followFocusedScreen && ws.output && ws.output.toLowerCase() === focusedOutput) || (!followFocusedScreen && ws.output && ws.output.toLowerCase() === screenNameLower);
+      if (matchesScreen) {
+        candidates.push(ws);
+        if (ws.isFocused) {
+          current = candidates.length - 1;
+        }
+      }
+    }
+
+    if (candidates.length <= 1)
       return;
-    const ws = localWorkspaces.get(indices[nextPos]);
+
+    if (current < 0)
+      current = 0;
+
+    var next = (current + offset) % candidates.length;
+    if (next < 0)
+      next += candidates.length;
+
+    if (next === current)
+      return;
+
+    const ws = candidates[next];
     if (ws && ws.idx !== undefined)
       CompositorService.switchToWorkspace(ws);
   }
