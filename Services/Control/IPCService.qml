@@ -324,6 +324,14 @@ Singleton {
       }
       IdleInhibitorService.addManualInhibitor(secs);
     }
+    function changeTimeout(seconds: string) {
+      var secs = parseInt(seconds);
+      if (isNaN(secs)) {
+        Logger.w("IPC", "Argument to 'idleInhibitor changeTimeout' must be a number");
+        return;
+      }
+      IdleInhibitorService.changeTimeout(secs);
+    }
   }
 
   IpcHandler {

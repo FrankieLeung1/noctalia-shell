@@ -151,27 +151,27 @@ Singleton {
   }
 
   function changeTimeout(delta) {
-    if (timeout == null && delta < 0) {
-      // no inhibitor, ignored
+    if (!activeInhibitors.includes("manual")) {
+      if (delta <= 0) {
+        return;
+      }
+      addManualInhibitor(delta);
       return;
     }
 
-    if (timeout == null && delta > 0) {
-      // enable manual inhibitor and set timeout
-      addManualInhibitor(timeout + delta);
+    if (timeout === null) {
+      if (delta <= 0) {
+        removeManualInhibitor();
+        return;
+      }
       return;
     }
 
-    if (timeout + delta <= 0) {
-      // disable manual inhibitor
+    const newTimeout = timeout + delta;
+    if (newTimeout <= 0) {
       removeManualInhibitor();
-      return;
-    }
-
-    if (timeout + delta > 0) {
-      // change timeout
-      addManualInhibitor(timeout + delta);
-      return;
+    } else {
+      addManualInhibitor(newTimeout);
     }
   }
 
@@ -185,7 +185,7 @@ Singleton {
 
     if (activeInhibitors.includes("manual")) {
       removeInhibitor("manual");
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("common.disabled"), "keep-awake-off");
+      // ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("common.disabled"), "keep-awake-off");
       Logger.i("IdleInhibitor", "Manual inhibition disabled");
     }
   }
@@ -193,7 +193,7 @@ Singleton {
   function addManualInhibitor(timeoutSec) {
     if (!activeInhibitors.includes("manual")) {
       addInhibitor("manual", "Manually activated by user");
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("common.enabled"), "keep-awake-on");
+      // ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("common.enabled"), "keep-awake-on");
     }
 
     if (timeoutSec === null && timeout === null) {
