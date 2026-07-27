@@ -798,6 +798,7 @@ Singleton {
       property string resumeLockCommand: ""
       property string resumeSuspendCommand: ""
       property string customCommands: "[]" // JSON array of {timeout, command, resumeCommand}
+      property string idleInhibitIgnoreList: "[]" // JSON array of window class strings to ignore
     }
 
     // desktop widgets

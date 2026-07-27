@@ -57,7 +57,7 @@ Singleton {
 
     let allPlayers = Mpris.players.values;
     let finalPlayers = [];
-    const genericBrowsers = ["firefox", "chromium", "chrome"];
+    const genericBrowsers = ["firefox", "firedragon", "zen", "librewolf", "waterfox", "chromium", "chrome", "brave", "vivaldi", "opera", "edge"];
     const blacklist = (Settings.data.audio && Settings.data.audio.mprisBlacklist) ? Settings.data.audio.mprisBlacklist : [];
 
     // Separate players into specific and generic lists

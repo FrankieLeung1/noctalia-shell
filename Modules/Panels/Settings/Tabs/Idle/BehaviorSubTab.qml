@@ -168,6 +168,124 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("idle.fadeDuration")
       onValueChanged: Settings.data.idle.fadeDuration = value
     }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
+    // Idle inhibit ignore list
+    ColumnLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginS
+
+      NLabel {
+        label: I18n.tr("panels.idle.ignore-list-label")
+        description: I18n.tr("panels.idle.ignore-list-description")
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginS
+
+        NTextInputButton {
+          id: newIgnoreInput
+          Layout.fillWidth: true
+          placeholderText: I18n.tr("panels.idle.ignore-list-placeholder")
+          buttonIcon: "add"
+          onButtonClicked: {
+            if (newIgnoreInput.text.length > 0) {
+              var newEntry = newIgnoreInput.text.trim();
+              var exists = false;
+              for (var i = 0; i < ignoreListModel.count; i++) {
+                if (ignoreListModel.get(i).rule === newEntry) {
+                  exists = true;
+                  break;
+                }
+              }
+              if (!exists) {
+                ignoreListModel.append({ "rule": newEntry });
+                newIgnoreInput.text = "";
+                saveIgnoreList();
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // List of current ignore list items
+    NListView {
+      Layout.fillWidth: true
+      Layout.preferredHeight: Math.max(50, Math.min(150, ignoreListModel.count * 40))
+      visible: ignoreListModel.count > 0
+      gradientColor: Color.mSurface
+
+      model: ignoreListModel
+      delegate: Item {
+        width: ListView.width
+        height: 40
+
+        Rectangle {
+          anchors.fill: parent
+          anchors.margins: Style.marginXS
+          color: "transparent"
+          border.color: Color.mOutline
+          border.width: Style.borderS
+          radius: Style.radiusS
+          visible: model.rule !== undefined && model.rule !== ""
+        }
+
+        Row {
+          anchors.fill: parent
+          anchors.leftMargin: Style.marginS
+          anchors.rightMargin: Style.marginS
+          spacing: Style.marginS
+
+          NText {
+            anchors.verticalCenter: parent.verticalCenter
+            text: model.rule
+            elide: Text.ElideRight
+          }
+
+          NIconButton {
+            anchors.verticalCenter: parent.verticalCenter
+            icon: "close"
+            baseSize: 12 * Style.uiScaleRatio
+            colorBg: Color.mSurfaceVariant
+            colorFg: Color.mOnSurfaceVariant
+            colorBgHover: Color.mError
+            colorFgHover: Color.mOnError
+            onClicked: {
+              ignoreListModel.remove(index);
+              saveIgnoreList();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ListModel {
+    id: ignoreListModel
+  }
+
+  Component.onCompleted: {
+    // Load existing ignore list from settings
+    try {
+      var list = JSON.parse(Settings.data.idle.idleInhibitIgnoreList);
+      for (var i = 0; i < list.length; i++) {
+        ignoreListModel.append({ "rule": list[i] });
+      }
+    } catch (e) {}
+  }
+
+  function saveIgnoreList() {
+    var newList = [];
+    for (var i = 0; i < ignoreListModel.count; i++) {
+      newList.push(ignoreListModel.get(i).rule);
+    }
+    Settings.data.idle.idleInhibitIgnoreList = JSON.stringify(newList);
+    Settings.saveImmediate();
   }
 
   component DefaultActionRow: RowLayout {

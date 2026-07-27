@@ -45,6 +45,19 @@ Singleton {
   }
 
   IpcHandler {
+    target: "panels"
+
+    function closeAllPanels() {
+      PanelService.closePanel();
+      root.screenDetector.withCurrentScreen(screen => {
+        SettingsPanelService.close(screen);
+        PanelService.closeContextMenu(screen);
+      });
+      NotificationService.dismissAllPopups();
+    }
+  }
+
+  IpcHandler {
     target: "bar"
     function toggle() {
       BarService.toggleVisibility();

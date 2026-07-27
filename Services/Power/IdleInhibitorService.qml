@@ -249,9 +249,39 @@ Singleton {
 
       try {
         const clients = JSON.parse(accumulatedOutput);
+
+        // Parse the ignore list from settings
+        var ignoreList = [];
+        try {
+          ignoreList = JSON.parse(Settings.data.idle.idleInhibitIgnoreList);
+        } catch (e) {}
+
         var hasInhibitor = false;
         for (var i = 0; i < clients.length; i++) {
-          if (clients[i].inhibitingIdle === true) {
+          if (clients[i].inhibitingIdle !== true)
+            continue;
+
+          // Check if this client's class matches any regex in the ignore list
+          var ignored = false;
+          var clientClass = clients[i].class || "";
+          for (var j = 0; j < ignoreList.length; j++) {
+            if (!ignoreList[j])
+              continue;
+            try {
+              if (new RegExp(ignoreList[j]).test(clientClass)) {
+                ignored = true;
+                break;
+              }
+            } catch (e) {
+              // Fall back to substring match if regex is invalid
+              if (clientClass.indexOf(ignoreList[j]) !== -1) {
+                ignored = true;
+                break;
+              }
+            }
+          }
+
+          if (!ignored) {
             hasInhibitor = true;
             break;
           }
