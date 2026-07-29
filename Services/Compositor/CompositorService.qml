@@ -370,9 +370,10 @@ Singleton {
 
   function getWindowsForWorkspace(workspaceId) {
     var windowsInWs = [];
+    var strWsId = String(workspaceId);
     for (var i = 0; i < windows.count; i++) {
       var window = windows.get(i);
-      if (window.workspaceId === workspaceId) {
+      if (window.workspaceId === workspaceId || String(window.workspaceId) === strWsId) {
         // Snapshot to plain JS object so callers never hold live ListModel
         // proxies that become invalid when syncWindows() clears the model.
         windowsInWs.push({
@@ -426,6 +427,77 @@ Singleton {
       }
     }
     return activeWorkspaces;
+  }
+
+  // Get active workspace for a specific screen (or fallback to focused/active)
+  function getActiveWorkspaceForScreen(screenName) {
+    if (!workspaces || workspaces.count === 0) {
+      return null;
+    }
+
+    var sName = screenName ? screenName.toLowerCase() : "";
+
+    // 1. Find active workspace on matching output
+    if (sName) {
+      for (var i = 0; i < workspaces.count; i++) {
+        const ws = workspaces.get(i);
+        if (ws.isActive && ws.output && ws.output.toLowerCase() === sName) {
+          return ws;
+        }
+      }
+      // 2. Find focused workspace on matching output
+      for (var j = 0; j < workspaces.count; j++) {
+        const wsFocused = workspaces.get(j);
+        if (wsFocused.isFocused && wsFocused.output && wsFocused.output.toLowerCase() === sName) {
+          return wsFocused;
+        }
+      }
+    }
+
+    // 3. Fallback to globally focused or active workspace
+    for (var k = 0; k < workspaces.count; k++) {
+      const wsGlob = workspaces.get(k);
+      if (wsGlob.isFocused) {
+        return wsGlob;
+      }
+    }
+    for (var m = 0; m < workspaces.count; m++) {
+      const wsAct = workspaces.get(m);
+      if (wsAct.isActive) {
+        return wsAct;
+      }
+    }
+
+    return workspaces.get(0);
+  }
+
+  // Check if there are any windows on the active workspace for a screen
+  function hasWindowsOnActiveWorkspace(screenName) {
+    var ws = getActiveWorkspaceForScreen(screenName);
+    if (!ws) {
+      if (!windows || windows.count === 0) {
+        return false;
+      }
+      var sName = screenName ? screenName.toLowerCase() : "";
+      for (var i = 0; i < windows.count; i++) {
+        var win = windows.get(i);
+        if (!sName || (win.output && win.output.toLowerCase() === sName)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    var windowsInWs = getWindowsForWorkspace(ws.id);
+    if (windowsInWs.length > 0) {
+      return true;
+    }
+
+    if (ws.isOccupied === true) {
+      return true;
+    }
+
+    return false;
   }
 
   // Set focused window

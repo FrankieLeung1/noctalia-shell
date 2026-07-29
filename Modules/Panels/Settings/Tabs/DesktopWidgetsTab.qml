@@ -46,6 +46,16 @@ ColumnLayout {
     onToggled: checked => Settings.data.desktopWidgets.overviewEnabled = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    enabled: Settings.data.desktopWidgets.enabled
+    label: I18n.tr("panels.desktop-widgets.only-on-empty-workspace-label")
+    description: I18n.tr("panels.desktop-widgets.only-on-empty-workspace-description")
+    checked: Settings.data.desktopWidgets.onlyOnEmptyWorkspace
+    defaultValue: Settings.getDefaultValue("desktopWidgets.onlyOnEmptyWorkspace")
+    onToggled: checked => Settings.data.desktopWidgets.onlyOnEmptyWorkspace = checked
+  }
+
   ColumnLayout {
     enabled: Settings.data.desktopWidgets.enabled
 

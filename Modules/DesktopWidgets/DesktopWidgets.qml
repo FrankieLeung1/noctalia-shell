@@ -49,9 +49,41 @@ Variants {
       return [];
     }
 
+    property bool activeWorkspaceHasWindows: false
+
+    function updateActiveWorkspaceHasWindows() {
+      if (!modelData || !modelData.name) {
+        activeWorkspaceHasWindows = false;
+        return;
+      }
+      activeWorkspaceHasWindows = CompositorService.hasWindowsOnActiveWorkspace(modelData.name);
+    }
+
+    Connections {
+      target: CompositorService
+
+      function onWorkspaceChanged() {
+        screenLoader.updateActiveWorkspaceHasWindows();
+      }
+
+      function onWorkspacesChanged() {
+        screenLoader.updateActiveWorkspaceHasWindows();
+      }
+
+      function onWindowListChanged() {
+        screenLoader.updateActiveWorkspaceHasWindows();
+      }
+
+      function onActiveWindowChanged() {
+        screenLoader.updateActiveWorkspaceHasWindows();
+      }
+    }
+
+    Component.onCompleted: updateActiveWorkspaceHasWindows()
+
     // Only create PanelWindow if enabled AND (screen has widgets OR in edit mode)
     // During compositor overview, show widgets only when overviewEnabled is true.
-    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableDesktopWidgets) && !PanelService.lockScreen?.active
+    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableDesktopWidgets) && !PanelService.lockScreen?.active && (!Settings.data.desktopWidgets.onlyOnEmptyWorkspace || DesktopWidgetRegistry.editMode || !activeWorkspaceHasWindows)
 
     sourceComponent: PanelWindow {
       id: window

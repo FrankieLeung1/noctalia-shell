@@ -557,6 +557,7 @@
   "desktopWidgets": {
     "enabled": false,
     "overviewEnabled": true,
+    "onlyOnEmptyWorkspace": false,
     "gridSnap": false,
     "gridSnapScale": false,
     "monitorWidgets": []

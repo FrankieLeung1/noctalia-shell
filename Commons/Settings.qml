@@ -805,6 +805,7 @@ Singleton {
     property JsonObject desktopWidgets: JsonObject {
       property bool enabled: false
       property bool overviewEnabled: true
+      property bool onlyOnEmptyWorkspace: false
       property bool gridSnap: false
       property bool gridSnapScale: false
       property list<var> monitorWidgets: []
