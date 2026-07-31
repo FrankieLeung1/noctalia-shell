@@ -43,13 +43,20 @@ DraggableDesktopWidget {
             }
           ];
     case "GPU":
-      return [
-            {
-              icon: "gpu-temperature",
-              text: Math.round(SystemStatService.gpuTemp) + "°C",
-              color: root.color
-            }
-          ];
+      var gpuItems = [];
+      if (SystemStatService.gpuUsage >= 0) {
+        gpuItems.push({
+          icon: "device-analytics",
+          text: Math.round(SystemStatService.gpuUsage) + "%",
+          color: root.color
+        });
+      }
+      gpuItems.push({
+        icon: "gpu-temperature",
+        text: Math.round(SystemStatService.gpuTemp) + "°C",
+        color: SystemStatService.gpuUsage >= 0 ? root.color2 : root.color
+      });
+      return gpuItems;
     case "Memory":
       return [
             {
@@ -99,7 +106,7 @@ DraggableDesktopWidget {
     case "CPU":
       return SystemStatService.cpuHistory;
     case "GPU":
-      return SystemStatService.gpuTempHistory;
+      return SystemStatService.gpuUsage >= 0 ? SystemStatService.gpuUsageHistory : SystemStatService.gpuTempHistory;
     case "Memory":
       return SystemStatService.memHistory;
     case "Disk":
@@ -111,11 +118,13 @@ DraggableDesktopWidget {
     }
   }
 
-  // Secondary history (CPU temp for CPU, Tx for Network)
+  // Secondary history (CPU temp for CPU, GPU temp for GPU, Tx for Network)
   readonly property var history2: {
     switch (root.statType) {
     case "CPU":
       return SystemStatService.cpuTempHistory;
+    case "GPU":
+      return SystemStatService.gpuUsage >= 0 ? SystemStatService.gpuTempHistory : [];
     case "Network":
       return SystemStatService.txSpeedHistory;
     default:
@@ -124,7 +133,7 @@ DraggableDesktopWidget {
   }
 
   // Graph min/max values
-  readonly property real graphMinValue: root.statType === "GPU" ? Math.max(SystemStatService.gpuTempHistoryMin - 5, 0) : 0
+  readonly property real graphMinValue: (root.statType === "GPU" && SystemStatService.gpuUsage < 0) ? Math.max(SystemStatService.gpuTempHistoryMin - 5, 0) : 0
   readonly property real graphMaxValue: {
     switch (root.statType) {
     case "CPU":
@@ -132,7 +141,7 @@ DraggableDesktopWidget {
     case "Disk":
       return 100;  // Percentage-based stats use fixed 0-100 range
     case "GPU":
-      return Math.max(SystemStatService.gpuTempHistoryMax + 5, 1);
+      return SystemStatService.gpuUsage >= 0 ? 100 : Math.max(SystemStatService.gpuTempHistoryMax + 5, 1);
     case "Network":
       return SystemStatService.rxMaxSpeed;
     default:
@@ -143,6 +152,8 @@ DraggableDesktopWidget {
     switch (root.statType) {
     case "CPU":
       return Math.max(SystemStatService.cpuTempHistoryMin - 5, 0);
+    case "GPU":
+      return Math.max(SystemStatService.gpuTempHistoryMin - 5, 0);
     default:
       return graphMinValue;
     }
@@ -151,6 +162,8 @@ DraggableDesktopWidget {
     switch (root.statType) {
     case "CPU":
       return Math.max(SystemStatService.cpuTempHistoryMax + 5, 1);
+    case "GPU":
+      return Math.max(SystemStatService.gpuTempHistoryMax + 5, 1);
     case "Network":
       return SystemStatService.txMaxSpeed;
     default:

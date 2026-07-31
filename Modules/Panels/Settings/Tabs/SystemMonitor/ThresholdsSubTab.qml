@@ -145,6 +145,42 @@ ColumnLayout {
       onValueChanged: Settings.data.systemMonitor.gpuCriticalThreshold = value
     }
 
+    // GPU Usage
+    NText {
+      visible: SystemStatService.gpuAvailable && SystemStatService.gpuUsage >= 0
+      text: I18n.tr("bar.system-monitor.gpu-usage-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      visible: SystemStatService.gpuAvailable && SystemStatService.gpuUsage >= 0
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.gpuUsageWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.gpuUsageWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.gpuUsageWarningThreshold = value;
+        if (Settings.data.systemMonitor.gpuUsageCriticalThreshold < value) {
+          Settings.data.systemMonitor.gpuUsageCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      visible: SystemStatService.gpuAvailable && SystemStatService.gpuUsage >= 0
+      Layout.alignment: Qt.AlignHCenter
+      from: Settings.data.systemMonitor.gpuUsageWarningThreshold
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.gpuUsageCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.gpuUsageCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.gpuUsageCriticalThreshold = value
+    }
+
     // Memory Usage
     NText {
       text: I18n.tr("bar.system-monitor.memory-usage-label")

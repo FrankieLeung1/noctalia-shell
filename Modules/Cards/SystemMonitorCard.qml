@@ -14,7 +14,8 @@ NBox {
   Component.onDestruction: SystemStatService.unregisterComponent("card-sysmonitor")
 
   readonly property string diskPath: Settings.data.controlCenter.diskPath || "/"
-  readonly property real contentScale: 0.95 * Style.uiScaleRatio
+  readonly property bool showGpuGauge: SystemStatService.gpuAvailable && SystemStatService.gpuUsage >= 0
+  readonly property int gaugeCount: showGpuGauge ? 5 : 4
 
   Item {
     id: content
@@ -26,7 +27,7 @@ NBox {
 
       Item {
         width: parent.width
-        height: parent.height / 4
+        height: parent.height / root.gaugeCount
 
         NCircleStat {
           id: cpuUsageGauge
@@ -49,8 +50,33 @@ NBox {
       }
 
       Item {
+        visible: root.showGpuGauge
         width: parent.width
-        height: parent.height / 4
+        height: visible ? (parent.height / root.gaugeCount) : 0
+
+        NCircleStat {
+          id: gpuUsageGauge
+          anchors.centerIn: parent
+          ratio: SystemStatService.gpuUsage / 100
+          icon: "device-analytics"
+          contentScale: root.contentScale
+          fillColor: SystemStatService.gpuUsageColor
+          tooltipText: I18n.tr("bar.system-monitor.gpu-usage-label") + `: ${Math.round(SystemStatService.gpuUsage)}%`
+        }
+
+        Connections {
+          target: SystemStatService
+          function onGpuUsageChanged() {
+            if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === gpuUsageGauge) {
+              TooltipService.updateText(I18n.tr("bar.system-monitor.gpu-usage-label") + `: ${Math.round(SystemStatService.gpuUsage)}%`);
+            }
+          }
+        }
+      }
+
+      Item {
+        width: parent.width
+        height: parent.height / root.gaugeCount
 
         NCircleStat {
           id: cpuTempGauge
@@ -75,7 +101,7 @@ NBox {
 
       Item {
         width: parent.width
-        height: parent.height / 4
+        height: parent.height / root.gaugeCount
 
         NCircleStat {
           id: memPercentGauge
@@ -99,7 +125,7 @@ NBox {
 
       Item {
         width: parent.width
-        height: parent.height / 4
+        height: parent.height / root.gaugeCount
 
         NCircleStat {
           id: diskPercentsGauge

@@ -331,6 +331,8 @@
     "tempCriticalThreshold": 90,
     "gpuWarningThreshold": 80,
     "gpuCriticalThreshold": 90,
+    "gpuUsageWarningThreshold": 80,
+    "gpuUsageCriticalThreshold": 90,
     "memWarningThreshold": 80,
     "memCriticalThreshold": 90,
     "swapWarningThreshold": 80,

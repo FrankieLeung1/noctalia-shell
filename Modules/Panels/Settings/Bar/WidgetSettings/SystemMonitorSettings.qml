@@ -30,6 +30,7 @@ ColumnLayout {
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
   property bool valueShowGpuTemp: widgetData.showGpuTemp !== undefined ? widgetData.showGpuTemp : widgetMetadata.showGpuTemp
+  property bool valueShowGpuUsage: widgetData.showGpuUsage !== undefined ? widgetData.showGpuUsage : (widgetMetadata.showGpuUsage ?? true)
   property bool valueShowLoadAverage: widgetData.showLoadAverage !== undefined ? widgetData.showLoadAverage : widgetMetadata.showLoadAverage
   property bool valueShowMemoryUsage: widgetData.showMemoryUsage !== undefined ? widgetData.showMemoryUsage : widgetMetadata.showMemoryUsage
   property bool valueShowMemoryAsPercent: widgetData.showMemoryAsPercent !== undefined ? widgetData.showMemoryAsPercent : widgetMetadata.showMemoryAsPercent
@@ -52,6 +53,7 @@ ColumnLayout {
     settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
     settings.showGpuTemp = valueShowGpuTemp;
+    settings.showGpuUsage = valueShowGpuUsage;
     settings.showLoadAverage = valueShowLoadAverage;
     settings.showMemoryUsage = valueShowMemoryUsage;
     settings.showMemoryAsPercent = valueShowMemoryAsPercent;
@@ -205,6 +207,20 @@ ColumnLayout {
     }
     visible: SystemStatService.gpuAvailable
     defaultValue: widgetMetadata.showGpuTemp
+  }
+
+  NToggle {
+    id: showGpuUsage
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.gpu-usage-label")
+    description: I18n.tr("bar.system-monitor.gpu-usage-description")
+    checked: valueShowGpuUsage
+    onToggled: checked => {
+      valueShowGpuUsage = checked;
+      saveSettings();
+    }
+    visible: SystemStatService.gpuAvailable && SystemStatService.gpuUsage >= 0
+    defaultValue: widgetMetadata.showGpuUsage ?? true
   }
 
   NToggle {

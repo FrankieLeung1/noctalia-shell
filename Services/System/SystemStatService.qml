@@ -45,8 +45,12 @@ Singleton {
   property real cpuFreqRatio: 0
   property real cpuGlobalMaxFreq: 3.5
   property real gpuTemp: 0
+  property real gpuUsage: -1 // 0-100%, -1 if unavailable
+  property real gpuVramGb: 0
+  property real gpuVramPercent: 0
+  property real gpuVramTotalGb: 0
   property bool gpuAvailable: false
-  property string gpuType: "" // "amd", "intel", "nvidia"
+  property string gpuType: "" // "amd", "intel", "nvidia", "thermal_zone"
   property real memGb: 0
   property real memPercent: 0
   property real memTotalGb: 0
@@ -81,6 +85,8 @@ Singleton {
   property var cpuHistory: new Array(cpuHistoryLength).fill(0)
   property var cpuTempHistory: new Array(cpuHistoryLength).fill(40)  // Reasonable default temp
   property var gpuTempHistory: new Array(gpuHistoryLength).fill(40)  // Reasonable default temp
+  property var gpuUsageHistory: new Array(gpuHistoryLength).fill(0)
+  property var gpuVramHistory: new Array(gpuHistoryLength).fill(0)
   property var memHistory: new Array(memHistoryLength).fill(0)
   property var diskHistories: ({}) // Keyed by mount path, initialized on first update
   property var rxSpeedHistory: new Array(networkHistoryLength).fill(0)
@@ -131,6 +137,22 @@ Singleton {
     if (h.length > gpuHistoryLength)
       h.shift();
     gpuTempHistory = h;
+  }
+
+  function pushGpuUsageHistory() {
+    let h = gpuUsageHistory.slice();
+    h.push(gpuUsage >= 0 ? gpuUsage : 0);
+    if (h.length > gpuHistoryLength)
+      h.shift();
+    gpuUsageHistory = h;
+  }
+
+  function pushGpuVramHistory() {
+    let h = gpuVramHistory.slice();
+    h.push(gpuVramPercent >= 0 ? gpuVramPercent : 0);
+    if (h.length > gpuHistoryLength)
+      h.shift();
+    gpuVramHistory = h;
   }
 
   function pushMemHistory() {
@@ -194,6 +216,8 @@ Singleton {
   readonly property int tempCriticalThreshold: Settings.data.systemMonitor.tempCriticalThreshold
   readonly property int gpuWarningThreshold: Settings.data.systemMonitor.gpuWarningThreshold
   readonly property int gpuCriticalThreshold: Settings.data.systemMonitor.gpuCriticalThreshold
+  readonly property int gpuUsageWarningThreshold: Settings.data.systemMonitor.gpuUsageWarningThreshold
+  readonly property int gpuUsageCriticalThreshold: Settings.data.systemMonitor.gpuUsageCriticalThreshold
   readonly property int memWarningThreshold: Settings.data.systemMonitor.memWarningThreshold
   readonly property int memCriticalThreshold: Settings.data.systemMonitor.memCriticalThreshold
   readonly property int swapWarningThreshold: Settings.data.systemMonitor.swapWarningThreshold
@@ -210,6 +234,8 @@ Singleton {
   readonly property bool tempCritical: cpuTemp >= tempCriticalThreshold
   readonly property bool gpuWarning: gpuAvailable && gpuTemp >= gpuWarningThreshold
   readonly property bool gpuCritical: gpuAvailable && gpuTemp >= gpuCriticalThreshold
+  readonly property bool gpuUsageWarning: gpuAvailable && gpuUsage >= 0 && gpuUsage >= gpuUsageWarningThreshold
+  readonly property bool gpuUsageCritical: gpuAvailable && gpuUsage >= 0 && gpuUsage >= gpuUsageCriticalThreshold
   readonly property bool memWarning: memPercent >= memWarningThreshold
   readonly property bool memCritical: memPercent >= memCriticalThreshold
   readonly property bool swapWarning: swapPercent >= swapWarningThreshold
@@ -228,6 +254,7 @@ Singleton {
   readonly property color cpuColor: cpuCritical ? criticalColor : (cpuWarning ? warningColor : Color.mPrimary)
   readonly property color tempColor: tempCritical ? criticalColor : (tempWarning ? warningColor : Color.mPrimary)
   readonly property color gpuColor: gpuCritical ? criticalColor : (gpuWarning ? warningColor : Color.mPrimary)
+  readonly property color gpuUsageColor: gpuUsageCritical ? criticalColor : (gpuUsageWarning ? warningColor : Color.mPrimary)
   readonly property color memColor: memCritical ? criticalColor : (memWarning ? warningColor : Color.mPrimary)
   readonly property color swapColor: swapCritical ? criticalColor : (swapWarning ? warningColor : Color.mPrimary)
 
@@ -339,8 +366,16 @@ Singleton {
     root.gpuType = "";
     root.gpuTempHwmonPath = "";
     root.gpuTemp = 0;
+    root.gpuUsage = -1;
+    root.gpuVramGb = 0;
+    root.gpuVramPercent = 0;
+    root.gpuVramTotalGb = 0;
     root.foundGpuSensors = [];
     root.gpuVramCheckIndex = 0;
+
+    if (intelGpuProcess.running) {
+      intelGpuProcess.running = false;
+    }
 
     // Restart GPU detection
     gpuTempNameReader.currentIndex = 0;
@@ -418,14 +453,14 @@ Singleton {
     onTriggered: netDevFile.reload()
   }
 
-  // Timer for GPU temperature
+  // Timer for GPU stats
   Timer {
     id: gpuTempTimer
     interval: root.gpuIntervalMs
     repeat: true
     running: root.shouldRun && root.gpuAvailable
     triggeredOnStart: true
-    onTriggered: updateGpuTemperature()
+    onTriggered: updateGpuStats()
   }
 
   // --------------------------------------------
@@ -954,18 +989,116 @@ Singleton {
   }
 
   // ----
-  // #4 - Read GPU temperature via nvidia-smi (NVIDIA only)
+  // AMD GPU usage and VRAM readers
+  FileView {
+    id: gpuBusyReader
+    printErrors: false
+    onLoaded: {
+      const busy = parseInt(text().trim());
+      if (!isNaN(busy)) {
+        root.gpuUsage = Math.min(100, Math.max(0, busy));
+        root.pushGpuUsageHistory();
+      }
+    }
+    onLoadFailed: {
+      root.gpuUsage = -1;
+      root.pushGpuUsageHistory();
+    }
+  }
+
+  FileView {
+    id: gpuVramUsedReader
+    printErrors: false
+    onLoaded: {
+      const bytes = parseFloat(text().trim());
+      if (!isNaN(bytes)) {
+        root.gpuVramGb = bytes / (1024 * 1024 * 1024);
+        if (root.gpuVramTotalGb > 0) {
+          root.gpuVramPercent = Math.round((root.gpuVramGb / root.gpuVramTotalGb) * 100);
+        }
+        root.pushGpuVramHistory();
+      }
+    }
+  }
+
+  FileView {
+    id: gpuVramTotalReader
+    printErrors: false
+    onLoaded: {
+      const bytes = parseFloat(text().trim());
+      if (!isNaN(bytes) && bytes > 0) {
+        root.gpuVramTotalGb = bytes / (1024 * 1024 * 1024);
+      }
+    }
+  }
+
+  // ----
+  // Read GPU stats via nvidia-smi (NVIDIA only)
   Process {
-    id: nvidiaTempProcess
-    command: ["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"]
+    id: nvidiaGpuProcess
+    command: ["nvidia-smi", "--query-gpu=temperature.gpu,utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"]
     running: false
     stdout: StdioCollector {
       onStreamFinished: {
-        const temp = parseInt(text.trim());
-        if (!isNaN(temp)) {
-          root.gpuTemp = temp;
-          root.pushGpuHistory();
+        const line = text.trim();
+        if (line.length > 0) {
+          const parts = line.split(',');
+          if (parts.length >= 4) {
+            const temp = parseInt(parts[0].trim());
+            const usage = parseInt(parts[1].trim());
+            const vramUsedMiB = parseFloat(parts[2].trim());
+            const vramTotalMiB = parseFloat(parts[3].trim());
+
+            if (!isNaN(temp)) root.gpuTemp = temp;
+            if (!isNaN(usage)) root.gpuUsage = Math.min(100, Math.max(0, usage));
+            if (!isNaN(vramUsedMiB) && !isNaN(vramTotalMiB) && vramTotalMiB > 0) {
+              root.gpuVramGb = vramUsedMiB / 1024;
+              root.gpuVramTotalGb = vramTotalMiB / 1024;
+              root.gpuVramPercent = Math.round((vramUsedMiB / vramTotalMiB) * 100);
+            }
+            root.pushGpuHistory();
+            root.pushGpuUsageHistory();
+            root.pushGpuVramHistory();
+          }
         }
+      }
+    }
+  }
+
+  // ----
+  // Intel GPU top process (Intel only)
+  Process {
+    id: intelGpuProcess
+    command: ["sudo", "-A", "intel_gpu_top", "-J", "-s", "5000"]
+    running: false
+    stdout: SplitParser {
+      splitMarker: "\n"
+      onRead: data => {
+        try {
+          let jsonStr = data.trim();
+          if (jsonStr.startsWith(",")) jsonStr = jsonStr.substring(1).trim();
+          if (!jsonStr || jsonStr === "[" || jsonStr === "]") return;
+          const parsed = JSON.parse(jsonStr);
+          let busyVal = -1;
+          if (parsed.engines) {
+            for (let key in parsed.engines) {
+              if (parsed.engines[key] && parsed.engines[key].busy !== undefined) {
+                busyVal = Math.max(busyVal, parsed.engines[key].busy);
+              }
+            }
+          }
+          if (busyVal >= 0) {
+            root.gpuUsage = Math.min(100, Math.max(0, Math.round(busyVal)));
+            root.pushGpuUsageHistory();
+          }
+        } catch (e) {
+          // Ignore JSON parse fragment errors
+        }
+      }
+    }
+    onRunningChanged: {
+      if (!running && root.gpuType === "intel") {
+        root.gpuUsage = -1;
       }
     }
   }
@@ -1483,13 +1616,27 @@ Singleton {
   }
 
   // -------------------------------------------------------
-  // Function to update GPU temperature
-  function updateGpuTemperature() {
+  // Function to update GPU stats (temperature, usage, VRAM)
+  function updateGpuStats() {
     if (root.gpuType === "nvidia") {
-      nvidiaTempProcess.running = true;
-    } else if (root.gpuType === "amd" || root.gpuType === "intel") {
+      nvidiaGpuProcess.running = true;
+    } else if (root.gpuType === "amd") {
       gpuTempReader.path = `${root.gpuTempHwmonPath}/temp1_input`;
       gpuTempReader.reload();
+      gpuBusyReader.path = `${root.gpuTempHwmonPath}/device/gpu_busy_percent`;
+      gpuBusyReader.reload();
+      if (root.gpuVramTotalGb <= 0) {
+        gpuVramTotalReader.path = `${root.gpuTempHwmonPath}/device/mem_info_vram_total`;
+        gpuVramTotalReader.reload();
+      }
+      gpuVramUsedReader.path = `${root.gpuTempHwmonPath}/device/mem_info_vram_used`;
+      gpuVramUsedReader.reload();
+    } else if (root.gpuType === "intel") {
+      gpuTempReader.path = `${root.gpuTempHwmonPath}/temp1_input`;
+      gpuTempReader.reload();
+      if (!intelGpuProcess.running && root.shouldRun) {
+        intelGpuProcess.running = true;
+      }
     } else if (root.gpuType === "thermal_zone") {
       if (root.gpuThermalZonePaths && root.gpuThermalZonePaths.length > 0) {
         // Multiple GPU zones (no gpu-avg), read all and take max
@@ -1502,5 +1649,8 @@ Singleton {
         gpuThermalZoneReader.reload();
       }
     }
+  }
+  function updateGpuTemperature() {
+    updateGpuStats();
   }
 }

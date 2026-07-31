@@ -144,6 +144,87 @@ SmartPanel {
         }
       }
 
+      // GPU Card (dual-line: usage % + temperature °C, plus VRAM)
+      NBox {
+        Layout.fillWidth: true
+        Layout.preferredHeight: panelContent.cardHeight
+        visible: SystemStatService.gpuAvailable
+
+        ColumnLayout {
+          anchors.fill: parent
+          anchors.margins: Style.marginS
+          anchors.bottomMargin: Style.radiusM * 0.5
+          spacing: Style.marginXS
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginXS
+
+            NIcon {
+              icon: "device-analytics"
+              pointSize: Style.fontSizeXS
+              color: Color.mPrimary
+            }
+
+            NText {
+              text: SystemStatService.gpuUsage >= 0 ? `${Math.round(SystemStatService.gpuUsage)}%` : "N/A"
+              pointSize: Style.fontSizeXS
+              color: Color.mPrimary
+              font.family: Settings.data.ui.fontFixed
+            }
+
+            NIcon {
+              icon: "gpu-temperature"
+              pointSize: Style.fontSizeXS
+              color: Color.mSecondary
+            }
+
+            NText {
+              text: `${Math.round(SystemStatService.gpuTemp)}°C`
+              pointSize: Style.fontSizeXS
+              color: Color.mSecondary
+              font.family: Settings.data.ui.fontFixed
+              Layout.rightMargin: Style.marginS
+            }
+
+            NText {
+              visible: SystemStatService.gpuVramTotalGb > 0
+              text: `VRAM: ${SystemStatService.gpuVramGb.toFixed(1)} / ${SystemStatService.gpuVramTotalGb.toFixed(1)} GiB`
+              pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+              font.family: Settings.data.ui.fontFixed
+            }
+
+            Item {
+              Layout.fillWidth: true
+            }
+
+            NText {
+              text: I18n.tr("panels.system-monitor.gpu-section-label")
+              pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+          }
+
+          NGraph {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            values: SystemStatService.gpuUsageHistory
+            values2: SystemStatService.gpuTempHistory
+            minValue: 0
+            maxValue: 100
+            minValue2: Math.max(SystemStatService.gpuTempHistoryMin - 5, 0)
+            maxValue2: Math.max(SystemStatService.gpuTempHistoryMax + 5, 1)
+            color: Color.mPrimary
+            color2: Color.mSecondary
+            strokeWidth: Math.max(1, Style.uiScaleRatio)
+            fill: true
+            fillOpacity: 0.15
+            updateInterval: SystemStatService.gpuIntervalMs
+          }
+        }
+      }
+
       // Memory Card (single-line + optional swap indicator)
       NBox {
         Layout.fillWidth: true
