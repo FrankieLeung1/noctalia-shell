@@ -586,73 +586,6 @@ Item {
         }
       }
 
-      // GPU Memory Component
-      Item {
-        id: gpuMemoryContainer
-        implicitWidth: gpuMemoryContent.implicitWidth
-        implicitHeight: gpuMemoryContent.implicitHeight
-        Layout.preferredWidth: isVertical ? root.width : implicitWidth
-        Layout.preferredHeight: compactMode ? implicitHeight : capsuleHeight
-        Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
-        visible: showGpuMemory && SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0
-
-        GridLayout {
-          id: gpuMemoryContent
-          anchors.centerIn: parent
-          flow: (isVertical && !compactMode) ? GridLayout.TopToBottom : GridLayout.LeftToRight
-          rows: (isVertical && !compactMode) ? 2 : 1
-          columns: (isVertical && !compactMode) ? 1 : 2
-          rowSpacing: Style.marginXXS
-          columnSpacing: compactMode ? 3 : Style.marginXS
-
-          Item {
-            Layout.preferredWidth: iconSize
-            Layout.preferredHeight: (compactMode || isVertical) ? iconSize : capsuleHeight
-            Layout.alignment: Qt.AlignCenter
-            Layout.row: (isVertical && !compactMode) ? 1 : 0
-            Layout.column: 0
-
-            NIcon {
-              icon: "chip"
-              pointSize: iconSize
-              applyUiScale: false
-              x: Style.pixelAlignCenter(parent.width, width)
-              y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: root.iconColor
-            }
-          }
-
-          // Text mode
-          NText {
-            visible: !compactMode
-            text: showGpuMemoryAsPercent ? SystemStatService.formatPercentageDisplay(SystemStatService.gpuVramPercent, usePadding) : SystemStatService.formatGigabytesDisplay(SystemStatService.gpuVramGb, usePadding ? SystemStatService.gpuVramTotalGb : null)
-            family: fontFamily
-            pointSize: barFontSize
-            applyUiScale: false
-            Layout.alignment: Qt.AlignCenter
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            color: root.textColor
-            Layout.row: isVertical ? 0 : 0
-            Layout.column: isVertical ? 0 : 1
-          }
-
-          // Compact mode
-          Loader {
-            active: compactMode
-            visible: compactMode
-            sourceComponent: miniGaugeComponent
-            Layout.alignment: Qt.AlignCenter
-            Layout.row: 0
-            Layout.column: 1
-
-            onLoaded: {
-              item.ratio = Qt.binding(() => SystemStatService.gpuVramPercent / 100);
-            }
-          }
-        }
-      }
-
       // Load Average Component
       Item {
         id: loadAvgContainer
@@ -786,6 +719,73 @@ Item {
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.memPercent / 100);
               item.fillColor = Qt.binding(() => SystemStatService.memColor);
+            }
+          }
+        }
+      }
+
+      // GPU Memory Component
+      Item {
+        id: gpuMemoryContainer
+        implicitWidth: gpuMemoryContent.implicitWidth
+        implicitHeight: gpuMemoryContent.implicitHeight
+        Layout.preferredWidth: isVertical ? root.width : implicitWidth
+        Layout.preferredHeight: compactMode ? implicitHeight : capsuleHeight
+        Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
+        visible: showGpuMemory && SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0
+
+        GridLayout {
+          id: gpuMemoryContent
+          anchors.centerIn: parent
+          flow: (isVertical && !compactMode) ? GridLayout.TopToBottom : GridLayout.LeftToRight
+          rows: (isVertical && !compactMode) ? 2 : 1
+          columns: (isVertical && !compactMode) ? 1 : 2
+          rowSpacing: Style.marginXXS
+          columnSpacing: compactMode ? 3 : Style.marginXS
+
+          Item {
+            Layout.preferredWidth: iconSize
+            Layout.preferredHeight: (compactMode || isVertical) ? iconSize : capsuleHeight
+            Layout.alignment: Qt.AlignCenter
+            Layout.row: (isVertical && !compactMode) ? 1 : 0
+            Layout.column: 0
+
+            NIcon {
+              icon: "video-minus"
+              pointSize: iconSize
+              applyUiScale: false
+              x: Style.pixelAlignCenter(parent.width, width)
+              y: Style.pixelAlignCenter(parent.height, contentHeight)
+              color: root.iconColor
+            }
+          }
+
+          // Text mode
+          NText {
+            visible: !compactMode
+            text: showGpuMemoryAsPercent ? SystemStatService.formatPercentageDisplay(SystemStatService.gpuVramPercent, usePadding) : SystemStatService.formatGigabytesDisplay(SystemStatService.gpuVramGb, usePadding ? SystemStatService.gpuVramTotalGb : null)
+            family: fontFamily
+            pointSize: barFontSize
+            applyUiScale: false
+            Layout.alignment: Qt.AlignCenter
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            color: root.textColor
+            Layout.row: isVertical ? 0 : 0
+            Layout.column: isVertical ? 0 : 1
+          }
+
+          // Compact mode
+          Loader {
+            active: compactMode
+            visible: compactMode
+            sourceComponent: miniGaugeComponent
+            Layout.alignment: Qt.AlignCenter
+            Layout.row: 0
+            Layout.column: 1
+
+            onLoaded: {
+              item.ratio = Qt.binding(() => SystemStatService.gpuVramPercent / 100);
             }
           }
         }
