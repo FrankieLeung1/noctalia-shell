@@ -187,14 +187,6 @@ SmartPanel {
               Layout.rightMargin: Style.marginS
             }
 
-            NText {
-              visible: SystemStatService.gpuVramTotalGb > 0
-              text: `VRAM: ${SystemStatService.gpuVramGb.toFixed(1)} / ${SystemStatService.gpuVramTotalGb.toFixed(1)} GiB`
-              pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
-              font.family: Settings.data.ui.fontFixed
-            }
-
             Item {
               Layout.fillWidth: true
             }
@@ -225,7 +217,7 @@ SmartPanel {
         }
       }
 
-      // Memory Card (single-line + optional swap indicator)
+      // Memory Card (dual-line: RAM % + VRAM %)
       NBox {
         Layout.fillWidth: true
         Layout.preferredHeight: panelContent.cardHeight
@@ -253,6 +245,22 @@ SmartPanel {
               font.family: Settings.data.ui.fontFixed
             }
 
+            NIcon {
+              visible: SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0
+              icon: "chip"
+              pointSize: Style.fontSizeXS
+              color: Color.mSecondary
+            }
+
+            NText {
+              visible: SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0
+              text: `VRAM: ${Math.round(SystemStatService.gpuVramPercent)}% (${(SystemStatService.gpuVramGb).toFixed(1)} GiB)`
+              pointSize: Style.fontSizeXS
+              color: Color.mSecondary
+              font.family: Settings.data.ui.fontFixed
+              Layout.rightMargin: Style.marginS
+            }
+
             Item {
               Layout.fillWidth: true
             }
@@ -268,9 +276,13 @@ SmartPanel {
             Layout.fillWidth: true
             Layout.fillHeight: true
             values: SystemStatService.memHistory
+            values2: (SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0) ? SystemStatService.gpuVramHistory : []
             minValue: 0
             maxValue: 100
+            minValue2: 0
+            maxValue2: 100
             color: Color.mPrimary
+            color2: Color.mSecondary
             strokeWidth: Math.max(1, Style.uiScaleRatio)
             fill: true
             fillOpacity: 0.15

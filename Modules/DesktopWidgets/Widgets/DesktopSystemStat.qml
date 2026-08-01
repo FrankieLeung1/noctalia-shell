@@ -56,23 +56,23 @@ DraggableDesktopWidget {
         text: Math.round(SystemStatService.gpuTemp) + "°C",
         color: SystemStatService.gpuUsage >= 0 ? root.color2 : root.color
       });
-      if (SystemStatService.gpuVramTotalGb > 0) {
-        gpuItems.push({
-          icon: "chip",
-          text: Math.round(SystemStatService.gpuVramPercent) + "%",
-          color: root.color,
-          opacity: 0.8
-        });
-      }
       return gpuItems;
     case "Memory":
-      return [
-            {
-              icon: "memory",
-              text: Math.round(SystemStatService.memPercent) + "%",
-              color: root.color
-            }
-          ];
+      var memItems = [
+        {
+          icon: "memory",
+          text: Math.round(SystemStatService.memPercent) + "%",
+          color: root.color
+        }
+      ];
+      if (SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0) {
+        memItems.push({
+          icon: "chip",
+          text: Math.round(SystemStatService.gpuVramPercent) + "%",
+          color: root.color2
+        });
+      }
+      return memItems;
     case "Disk":
       var items = [
             {
@@ -126,13 +126,15 @@ DraggableDesktopWidget {
     }
   }
 
-  // Secondary history (CPU temp for CPU, GPU temp for GPU, Tx for Network)
+  // Secondary history (CPU temp for CPU, GPU temp for GPU, VRAM for Memory, Tx for Network)
   readonly property var history2: {
     switch (root.statType) {
     case "CPU":
       return SystemStatService.cpuTempHistory;
     case "GPU":
       return SystemStatService.gpuUsage >= 0 ? SystemStatService.gpuTempHistory : [];
+    case "Memory":
+      return (SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0) ? SystemStatService.gpuVramHistory : [];
     case "Network":
       return SystemStatService.txSpeedHistory;
     default:
@@ -162,6 +164,8 @@ DraggableDesktopWidget {
       return Math.max(SystemStatService.cpuTempHistoryMin - 5, 0);
     case "GPU":
       return Math.max(SystemStatService.gpuTempHistoryMin - 5, 0);
+    case "Memory":
+      return 0;
     default:
       return graphMinValue;
     }
@@ -172,6 +176,8 @@ DraggableDesktopWidget {
       return Math.max(SystemStatService.cpuTempHistoryMax + 5, 1);
     case "GPU":
       return Math.max(SystemStatService.gpuTempHistoryMax + 5, 1);
+    case "Memory":
+      return 100;
     case "Network":
       return SystemStatService.txMaxSpeed;
     default:
