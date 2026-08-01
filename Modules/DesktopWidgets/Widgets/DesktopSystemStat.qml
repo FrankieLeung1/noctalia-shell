@@ -56,6 +56,14 @@ DraggableDesktopWidget {
         text: Math.round(SystemStatService.gpuTemp) + "°C",
         color: SystemStatService.gpuUsage >= 0 ? root.color2 : root.color
       });
+      if (SystemStatService.gpuVramTotalGb > 0) {
+        gpuItems.push({
+          icon: "chip",
+          text: Math.round(SystemStatService.gpuVramPercent) + "%",
+          color: root.color,
+          opacity: 0.8
+        });
+      }
       return gpuItems;
     case "Memory":
       return [

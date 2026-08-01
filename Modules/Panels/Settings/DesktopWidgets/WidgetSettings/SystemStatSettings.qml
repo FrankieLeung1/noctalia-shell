@@ -56,7 +56,7 @@ ColumnLayout {
               "name": I18n.tr("system-monitor.disk")
             }
           ];
-      if (Settings.data.systemMonitor.enableDgpuMonitoring)
+      if (SystemStatService.gpuAvailable || Settings.data.systemMonitor.enableDgpuMonitoring)
         items.push({
                      "key": "GPU",
                      "name": I18n.tr("panels.system-monitor.gpu-section-label")
