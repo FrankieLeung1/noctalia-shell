@@ -471,7 +471,7 @@ Singleton {
     return workspaces.get(0);
   }
 
-  // Check if there are any windows on the active workspace for a screen
+  // Check if there are any non-pinned windows on the active workspace for a screen
   function hasWindowsOnActiveWorkspace(screenName) {
     var ws = getActiveWorkspaceForScreen(screenName);
     if (!ws) {
@@ -481,6 +481,9 @@ Singleton {
       var sName = screenName ? screenName.toLowerCase() : "";
       for (var i = 0; i < windows.count; i++) {
         var win = windows.get(i);
+        if (win.pinned) {
+          continue;
+        }
         if (!sName || (win.output && win.output.toLowerCase() === sName)) {
           return true;
         }
@@ -489,11 +492,14 @@ Singleton {
     }
 
     var windowsInWs = getWindowsForWorkspace(ws.id);
-    if (windowsInWs.length > 0) {
-      return true;
+    var unpinnedCount = 0;
+    for (var j = 0; j < windowsInWs.length; j++) {
+      if (!windowsInWs[j].pinned) {
+        unpinnedCount++;
+      }
     }
 
-    if (ws.isOccupied === true) {
+    if (unpinnedCount > 0) {
       return true;
     }
 
