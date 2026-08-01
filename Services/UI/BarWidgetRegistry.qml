@@ -259,6 +259,8 @@ Singleton {
                                     "showCpuTemp": true,
                                     "showGpuTemp": false,
                                     "showGpuUsage": true,
+                                    "showGpuMemory": false,
+                                    "showGpuMemoryAsPercent": false,
                                     "showLoadAverage": false,
                                     "showMemoryUsage": true,
                                     "showMemoryAsPercent": false,
