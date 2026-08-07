@@ -33,6 +33,7 @@ ColumnLayout {
   property string valueOccupiedColor: widgetData.occupiedColor !== undefined ? widgetData.occupiedColor : widgetMetadata.occupiedColor
   property string valueEmptyColor: widgetData.emptyColor !== undefined ? widgetData.emptyColor : widgetMetadata.emptyColor
   property bool valueShowBadge: widgetData.showBadge !== undefined ? widgetData.showBadge : widgetMetadata.showBadge
+  property bool valueShowPinnedWindows: widgetData.showPinnedWindows !== undefined ? widgetData.showPinnedWindows : (widgetMetadata.showPinnedWindows !== undefined ? widgetMetadata.showPinnedWindows : true)
   property real valuePillSize: widgetData.pillSize !== undefined ? widgetData.pillSize : widgetMetadata.pillSize
   property string valueFontWeight: widgetData.fontWeight !== undefined ? widgetData.fontWeight : widgetMetadata.fontWeight
 
@@ -54,6 +55,7 @@ ColumnLayout {
     settings.occupiedColor = valueOccupiedColor;
     settings.emptyColor = valueEmptyColor;
     settings.showBadge = valueShowBadge;
+    settings.showPinnedWindows = valueShowPinnedWindows;
     settings.pillSize = valuePillSize;
     settings.fontWeight = valueFontWeight;
     settingsChanged(settings);
@@ -155,6 +157,16 @@ ColumnLayout {
     checked: valueHideUnoccupied
     onToggled: checked => {
       valueHideUnoccupied = checked;
+      saveSettings();
+    }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.show-pinned-windows-label")
+    description: I18n.tr("bar.workspace.show-pinned-windows-description")
+    checked: valueShowPinnedWindows
+    onToggled: checked => {
+      valueShowPinnedWindows = checked;
       saveSettings();
     }
   }

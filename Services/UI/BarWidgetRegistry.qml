@@ -327,6 +327,7 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
+                                    "showPinnedWindows": true,
                                     "pillSize": 0.6,
                                     "fontWeight": "bold"
                                   },

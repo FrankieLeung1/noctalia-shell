@@ -344,6 +344,8 @@
       "show-applications-label": "Show applications",
       "show-badge-description": "Show the workspace number badge in grouped mode.",
       "show-badge-label": "Show workspace badge",
+      "show-pinned-windows-description": "Display a dedicated workspace pill for pinned/sticky windows.",
+      "show-pinned-windows-label": "Show pinned windows",
       "show-labels-only-when-occupied-description": "Only show workspace labels when they contain windows.",
       "show-labels-only-when-occupied-label": "Show labels only when occupied",
       "unfocused-icons-opacity-description": "Set the opacity level for unfocused app icons.",

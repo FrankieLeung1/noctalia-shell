@@ -85,6 +85,7 @@ Item {
   readonly property string occupiedColor: (widgetSettings.occupiedColor !== undefined) ? widgetSettings.occupiedColor : widgetMetadata.occupiedColor
   readonly property string emptyColor: (widgetSettings.emptyColor !== undefined) ? widgetSettings.emptyColor : widgetMetadata.emptyColor
   readonly property bool showBadge: (widgetSettings.showBadge !== undefined) ? widgetSettings.showBadge : widgetMetadata.showBadge
+  readonly property bool showPinnedWindows: (widgetSettings.showPinnedWindows !== undefined) ? widgetSettings.showPinnedWindows : (widgetMetadata.showPinnedWindows !== undefined ? widgetMetadata.showPinnedWindows : true)
 
   // Only for grouped mode / show apps
   readonly property int baseItemSize: Style.toOdd(capsuleHeight * 0.8)
@@ -356,6 +357,7 @@ Item {
   onScreenChanged: scheduleRefresh()
   onScreenNameChanged: scheduleRefresh()
   onHideUnoccupiedChanged: scheduleRefresh()
+  onShowPinnedWindowsChanged: scheduleRefresh()
   onAppVisibleChanged: {
     if (appVisible) {
       scheduleRefresh();
@@ -435,10 +437,10 @@ Item {
       }
     }
 
-    // Append a synthetic "pinned apps" workspace if any compositor-level
+    // Append a synthetic "pinned apps" workspace if enabled and any compositor-level
     // pinned (sticky) windows exist on this screen.
     var pinnedOutput = followFocusedScreen ? focusedOutput : (screen ? screen.name.toLowerCase() : null);
-    if (pinnedOutput) {
+    if (showPinnedWindows && pinnedOutput) {
       var hasPinned = false;
       for (var p = 0; p < CompositorService.windows.count; p++) {
         var pw = CompositorService.windows.get(p);
@@ -814,7 +816,7 @@ Item {
           liveWindows = pinnedList;
         } else if (wsId !== undefined && wsId !== null) {
           // Drop sticky/pinned (compositor-level) windows so they don't get
-          // drawn on every workspace pill as the user switches workspace.
+          // drawn on normal workspace pills as the user switches workspace.
           liveWindows = CompositorService.getWindowsForWorkspace(wsId).filter(function (w) {
             return !w.pinned;
           });
