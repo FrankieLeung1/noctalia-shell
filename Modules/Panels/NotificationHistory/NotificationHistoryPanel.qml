@@ -255,9 +255,11 @@ SmartPanel {
 
     // UI state (lazy-loaded with panelContent)
     // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
-    property int currentRange: 1  // start on Today by default
-    property bool groupByDate: true
-    onCurrentRangeChanged: resetFocus()
+    property int currentRange: NotificationService.defaultHistoryRange
+    onCurrentRangeChanged: {
+      NotificationService.defaultHistoryRange = currentRange;
+      resetFocus();
+    }
 
     // Keyboard navigation state
     property int focusIndex: -1

@@ -26,6 +26,7 @@ Singleton {
   property real lastSeenTs: 0
   // Volatile property that doesn't persist to settings (similar to noctaliaPerformanceMode)
   property bool doNotDisturb: false
+  property int defaultHistoryRange: 1  // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
 
   // Models
   property ListModel popupModel: ListModel {}
@@ -153,17 +154,19 @@ Singleton {
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;
 
-    // Check if this is a replacement notification
+    // Check if this is a replacement notification by quickshell ID or replaces ID
     const existingInternalId = quickshellIdToInternalId[quickshellId];
     if (existingInternalId && popupState[existingInternalId]) {
       updatePopup(existingInternalId, notification, data);
       return;
     }
 
-    // Check for duplicate content
+    // Check for duplicate content in active popups
     const duplicateId = findDuplicateNotification(data);
-    if (duplicateId) {
-      removePopup(duplicateId);
+    if (duplicateId && popupState[duplicateId]) {
+      updatePopup(duplicateId, notification, data);
+      quickshellIdToInternalId[quickshellId] = duplicateId;
+      return;
     }
 
     // Add new notification

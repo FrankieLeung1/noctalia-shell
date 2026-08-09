@@ -199,12 +199,40 @@ Singleton {
 
   IpcHandler {
     target: "notifications"
-    function toggleHistory() {
+    function toggleHistory(range: string) {
+      if (range !== undefined && range !== "") {
+        setHistoryRange(range);
+      }
       // Will attempt to open the panel next to the bar button if any.
       root.screenDetector.withCurrentScreen(screen => {
         var notificationHistoryPanel = PanelService.getPanel("notificationHistoryPanel", screen);
         notificationHistoryPanel.toggle(null, "NotificationHistory");
       });
+    }
+    function setHistoryRange(range: string): bool {
+      var r = -1;
+      if (typeof range === "number") {
+        r = range;
+      } else {
+        var str = String(range).trim().toLowerCase();
+        if (str === "all" || str === "0") r = 0;
+        else if (str === "today" || str === "1") r = 1;
+        else if (str === "yesterday" || str === "2") r = 2;
+        else if (str === "earlier" || str === "3") r = 3;
+        else {
+          var parsed = parseInt(str);
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= 3) r = parsed;
+        }
+      }
+      if (r < 0 || r > 3) {
+        Logger.w("IPC", "Invalid notification history range: " + range + ". Valid: 0/all, 1/today, 2/yesterday, 3/earlier");
+        return false;
+      }
+      NotificationService.defaultHistoryRange = r;
+      return true;
+    }
+    function getHistoryRange(): int {
+      return NotificationService.defaultHistoryRange;
     }
     function toggleDND() {
       NotificationService.doNotDisturb = !NotificationService.doNotDisturb;
