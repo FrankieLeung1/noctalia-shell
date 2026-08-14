@@ -125,8 +125,6 @@ Singleton {
     function onSettingsSaved() {
       updateNotificationServer();
     }
-  }
-
   // Helper function to generate content-based ID for deduplication
   function getContentId(summary, body, appName) {
     return Checksum.sha256(JSON.stringify({
@@ -141,9 +139,26 @@ Singleton {
     const quickshellId = notification.id;
     const data = createData(notification);
 
-    const ruleAction = NotificationRulesService.evaluate(data.appName, data.summary, data.body);
-    if (ruleAction === "block")
+    // 1. Check if this is a replacement notification by quickshell ID or replaces ID
+    const existingInternalId = quickshellIdToInternalId[quickshellId];
+    if (existingInternalId && popupState[existingInternalId]) {
+      updatePopup(existingInternalId, notification, data);
       return;
+    }
+
+    // 2. Check for duplicate content in active/recent popups BEFORE rule evaluation
+    const duplicateId = findDuplicateNotification(data);
+    if (duplicateId && popupState[duplicateId]) {
+      updatePopup(duplicateId, notification, data);
+      quickshellIdToInternalId[quickshellId] = duplicateId;
+      return;
+    }
+
+    // 3. Evaluate notification rules AFTER deduplication
+    const ruleAction = NotificationRulesService.evaluate(data.appName, data.summary, data.body);
+    if (ruleAction === "block") {
+      return;
+    }
     if (ruleAction === "hide") {
       trySaveToHistory(data, notification);
       return;
@@ -151,21 +166,7 @@ Singleton {
 
     trySaveToHistory(data, notification);
 
-    if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
-      return;
-
-    // Check if this is a replacement notification by quickshell ID or replaces ID
-    const existingInternalId = quickshellIdToInternalId[quickshellId];
-    if (existingInternalId && popupState[existingInternalId]) {
-      updatePopup(existingInternalId, notification, data);
-      return;
-    }
-
-    // Check for duplicate content in active popups
-    const duplicateId = findDuplicateNotification(data);
-    if (duplicateId && popupState[duplicateId]) {
-      updatePopup(duplicateId, notification, data);
-      quickshellIdToInternalId[quickshellId] = duplicateId;
+    if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode) {
       return;
     }
 
@@ -346,11 +347,10 @@ Singleton {
     popupState[data.id] = {
       "notification": notification,
       "watcher": watcher,
-      "cachedActions": safeActions // Cache actions
-                       ,
+      "cachedActions": safeActions,
+      "data": data,
       "metadata": {
-        "originalId": data.originalId // Store original ID
-                      ,
+        "originalId": data.originalId,
         "timestamp": data.timestamp.getTime(),
         "duration": calculateDuration(data),
         "urgency": data.urgency,
@@ -388,13 +388,61 @@ Singleton {
   function findDuplicateNotification(data) {
     const contentId = getContentId(data.summary, data.body, data.appName);
 
+    // 1. Check visual popupModel
     for (var i = 0; i < popupModel.count; i++) {
       const existing = popupModel.get(i);
       const existingContentId = getContentId(existing.summary, existing.body, existing.appName);
       if (existingContentId === contentId) {
         return existing.id;
       }
+
+      // Fuzzy match: Same app & summary within 5 seconds (handles initial empty body vs updated body)
+      if (existing.appName === data.appName && existing.summary === data.summary) {
+        const existingTime = existing.timestamp ? new Date(existing.timestamp).getTime() : 0;
+        const timeDiff = Math.abs(data.timestamp.getTime() - existingTime);
+        if (timeDiff <= 5000 && (existing.body === data.body || existing.body === "" || data.body === "")) {
+          if (data.body && !existing.body) {
+            popupModel.setProperty(i, "body", data.body);
+            popupModel.setProperty(i, "bodyMarkdown", data.bodyMarkdown);
+          }
+          return existing.id;
+        }
+      }
     }
+
+    // 2. Check synchronous popupState (catches rapid back-to-back duplicates in same millisecond before Qt.callLater runs)
+    for (var id in popupState) {
+      const itemData = popupState[id]?.data;
+      if (itemData) {
+        const itemContentId = getContentId(itemData.summary, itemData.body, itemData.appName);
+        if (itemContentId === contentId) {
+          return id;
+        }
+
+        // Fuzzy match in popupState: Same app & summary within 5s
+        if (itemData.appName === data.appName && itemData.summary === data.summary) {
+          const itemTime = itemData.timestamp ? itemData.timestamp.getTime() : 0;
+          const timeDiff = Math.abs(data.timestamp.getTime() - itemTime);
+          if (timeDiff <= 5000 && (itemData.body === data.body || itemData.body === "" || data.body === "")) {
+            if (data.body && !itemData.body) {
+              itemData.body = data.body;
+              itemData.bodyMarkdown = data.bodyMarkdown;
+            }
+            return id;
+          }
+        }
+      }
+    }
+
+    // 3. Check synchronous recent history map (catches duplicate hidden notifications in same millisecond)
+    const key = data.appName + "::" + data.summary;
+    if (recentHistoryMap[key]) {
+      const timeDiff = Math.abs(data.timestamp.getTime() - recentHistoryMap[key].timestamp);
+      if (timeDiff <= 5000 && (recentHistoryMap[key].body === data.body || recentHistoryMap[key].body === "" || data.body === "")) {
+        return recentHistoryMap[key].data.id;
+      }
+    }
+
     return null;
   }
 
@@ -597,23 +645,42 @@ Singleton {
   }
   }
 
-    function addToHistory(data) {
+  property var recentHistoryMap: ({})
+
+  function addToHistory(data) {
+    const key = data.appName + "::" + data.summary;
+    const now = data.timestamp.getTime();
+
+    // Check synchronous recent history map within 5 seconds
+    if (recentHistoryMap[key]) {
+      const timeDiff = Math.abs(now - recentHistoryMap[key].timestamp);
+      if (timeDiff <= 5000 && (recentHistoryMap[key].body === data.body || recentHistoryMap[key].body === "" || data.body === "")) {
+        return;
+      }
+    }
+
+    recentHistoryMap[key] = {
+      "timestamp": now,
+      "body": data.body,
+      "data": data
+    };
+
     // Defer list insertion to prevent re-entrant QML incubation crash.
     // See addPopup for full explanation.
     Qt.callLater(() => {
-    historyModel.insert(0, data);
+      historyModel.insert(0, data);
 
-    while (historyModel.count > maxHistory) {
-    const old = historyModel.get(historyModel.count - 1);
-    // Only delete cached images that are in our cache directory
-    const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
-    if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
-    Quickshell.execDetached(["rm", "-f", cachedPath]);
-  }
-    historyModel.remove(historyModel.count - 1);
-  }
-    saveHistory();
-  });
+      while (historyModel.count > maxHistory) {
+        const old = historyModel.get(historyModel.count - 1);
+        // Only delete cached images that are in our cache directory
+        const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
+        if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+          Quickshell.execDetached(["rm", "-f", cachedPath]);
+        }
+        historyModel.remove(historyModel.count - 1);
+      }
+      saveHistory();
+    });
   }
 
     // Persistence - History
