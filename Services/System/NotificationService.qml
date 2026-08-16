@@ -125,6 +125,7 @@ Singleton {
     function onSettingsSaved() {
       updateNotificationServer();
     }
+  }
   // Helper function to generate content-based ID for deduplication
   function getContentId(summary, body, appName) {
     return Checksum.sha256(JSON.stringify({
