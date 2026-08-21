@@ -2051,6 +2051,8 @@
     "home": "Home directory",
     "input-muted": "Toggle input mute",
     "keep-awake": "Keep Awake",
+    "keep-awake-manual": "Manual",
+    "keep-awake-manual-timeout": "Manual ({duration})",
     "keyboard-layout": "{layout} keyboard layout",
     "list-view": "List view",
     "manage-vpn": "VPN connections",

@@ -70,7 +70,7 @@ Item {
     customIconColor: (IdleInhibitorService.isInhibited && root.activeColorKey !== "none") ? Color.resolveColorKeyOptional(root.activeColorKey) : Color.resolveColorKeyOptional(root.inactiveColorKey)
     customTextColor: (IdleInhibitorService.isInhibited && root.activeColorKey !== "none") ? Color.resolveColorKeyOptional(root.activeColorKey) : Color.resolveColorKeyOptional(root.inactiveColorKey)
     icon: IdleInhibitorService.isManuallyInhibited ? "keep-awake-on" : "keep-awake-off"
-    tooltipText: IdleInhibitorService.isInhibited ? I18n.tr("tooltips.keep-awake") : I18n.tr("tooltips.keep-awake")
+    tooltipText: IdleInhibitorService.inhibitingSummary
     onClicked: IdleInhibitorService.manualToggle()
     onRightClicked: {
       PanelService.showContextMenu(contextMenu, pill, screen);

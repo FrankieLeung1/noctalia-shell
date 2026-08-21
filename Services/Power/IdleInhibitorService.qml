@@ -14,6 +14,27 @@ Singleton {
   property bool isManuallyInhibited: false
   property string reason: I18n.tr("system.user-requested")
   property var activeInhibitors: []
+  property var inhibitingApps: []
+  readonly property string inhibitingSummary: {
+    var details = [];
+    if (isManuallyInhibited) {
+      if (timeout !== null) {
+        details.push(I18n.tr("tooltips.keep-awake-manual-timeout", { "duration": Time.formatVagueHumanReadableDuration(timeout) }));
+      } else {
+        details.push(I18n.tr("tooltips.keep-awake-manual"));
+      }
+    }
+    if (inhibitingApps && inhibitingApps.length > 0) {
+      details.push(inhibitingApps.join(", "));
+    }
+    if (details.length > 0) {
+      return `${I18n.tr("tooltips.keep-awake")}: ${details.join(" • ")}`;
+    }
+    if (isInhibited) {
+      return `${I18n.tr("tooltips.keep-awake")}: ${reason}`;
+    }
+    return I18n.tr("tooltips.keep-awake");
+  }
   property var timeout: null // in seconds
 
   // True when the native Wayland IdleInhibitor is handling inhibition
@@ -257,6 +278,7 @@ Singleton {
         } catch (e) {}
 
         var hasInhibitor = false;
+        var foundApps = [];
         for (var i = 0; i < clients.length; i++) {
           if (clients[i].inhibitingIdle !== true)
             continue;
@@ -283,9 +305,14 @@ Singleton {
 
           if (!ignored) {
             hasInhibitor = true;
-            break;
+            var appName = clients[i].title || clients[i].class || clients[i].initialTitle || clients[i].initialClass || "Unknown";
+            if (!foundApps.includes(appName)) {
+              foundApps.push(appName);
+            }
           }
         }
+
+        inhibitingApps = foundApps;
 
         if (hasInhibitor) {
           if (!activeInhibitors.includes("hyprland-external")) {
