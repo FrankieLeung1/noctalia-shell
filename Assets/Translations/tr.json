@@ -1697,6 +1697,7 @@
       "external-monitor-placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor",
       "general-desc": "Sistem İzleyicisinin davranışını ve görünümünü yapılandırın.",
       "gpu-section-label": "GPU sıcaklığı",
+      "gpu-vram-label": "VRAM",
       "highlight-colors-section-label": "Vurgulama renkleri",
       "polling-interval-label": "Yoklama aralığı",
       "polling-section-description": "Her bir sistem metriğinin ne sıklıkta güncelleneceğini yapılandırın.",

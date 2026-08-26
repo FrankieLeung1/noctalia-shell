@@ -1371,6 +1371,7 @@
       "external-monitor-placeholder": "çavkanî || navendamisyonê || jdsîstemonîtor || statîstîkênbingehîn || navenda-çavdêriya-sîstemê || gnome-sîstem-monitor || plasma-sîstemmonitor || mate-sîstem-monitor || ukui-sîstem-monitor || deepin-sîstem-monitor || pantheon-sîstem-monitor",
       "general-desc": "Sazkirina reftar û xuyabûna çavdêriya pergalê.",
       "gpu-section-label": "Germahiya YKG",
+      "gpu-vram-label": "VRAM",
       "highlight-colors-section-label": "Rengên ronîkirinê",
       "polling-interval-label": "Navbera anketê",
       "polling-section-description": "Mîheng bike ku her pîvana pergalê çiqas caran were nûkirin.",

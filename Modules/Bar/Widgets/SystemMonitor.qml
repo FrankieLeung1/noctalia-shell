@@ -113,7 +113,7 @@ Item {
       if (SystemStatService.gpuUsage >= 0) {
         rows.push([I18n.tr("bar.system-monitor.gpu-usage-label"), `${Math.round(SystemStatService.gpuUsage)}%`]);
         if (SystemStatService.gpuVramTotalGb > 0) {
-          rows.push([I18n.tr("gpu-vram-label"), `${Math.round(SystemStatService.gpuVramPercent)}% (${SystemStatService.gpuVramGb.toFixed(1)} / ${SystemStatService.gpuVramTotalGb.toFixed(1)} GiB)`]);
+          rows.push([I18n.tr("panels.system-monitor.gpu-vram-label"), `${Math.round(SystemStatService.gpuVramPercent)}% (${SystemStatService.gpuVramGb.toFixed(1)} / ${SystemStatService.gpuVramTotalGb.toFixed(1)} GiB)`]);
         }
       }
       rows.push([I18n.tr("system-monitor.gpu-temp"), `${Math.round(SystemStatService.gpuTemp)}°C`]);

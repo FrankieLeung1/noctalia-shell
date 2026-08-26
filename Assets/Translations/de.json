@@ -1697,6 +1697,7 @@
       "external-monitor-placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor",
       "general-desc": "Konfigurieren Sie das Verhalten und Aussehen des Systemmonitors.",
       "gpu-section-label": "GPU-Temperatur",
+      "gpu-vram-label": "VRAM",
       "highlight-colors-section-label": "Hervorhebungsfarben",
       "polling-interval-label": "Abfrageintervall",
       "polling-section-description": "Konfigurieren Sie, wie oft jede Systemmetrik aktualisiert wird.",

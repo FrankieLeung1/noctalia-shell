@@ -1697,6 +1697,7 @@
       "external-monitor-placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor",
       "general-desc": "Nastavit chování a vzhled systémového monitoru.",
       "gpu-section-label": "Teplota GPU",
+      "gpu-vram-label": "VRAM",
       "highlight-colors-section-label": "Barvy zvýraznění",
       "polling-interval-label": "Interval dotazování",
       "polling-section-description": "Nastavit, jak často se aktualizuje každá systémová metrika.",

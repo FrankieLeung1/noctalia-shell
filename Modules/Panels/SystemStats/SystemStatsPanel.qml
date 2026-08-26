@@ -254,7 +254,7 @@ SmartPanel {
 
             NText {
               visible: SystemStatService.gpuAvailable && SystemStatService.gpuVramTotalGb > 0
-              text: `VRAM: ${Math.round(SystemStatService.gpuVramPercent)}% (${(SystemStatService.gpuVramGb).toFixed(1)} GiB)`
+              text: `${I18n.tr("panels.system-monitor.gpu-vram-label")}: ${Math.round(SystemStatService.gpuVramPercent)}% (${(SystemStatService.gpuVramGb).toFixed(1)} GiB)`
               pointSize: Style.fontSizeXS
               color: Color.mSecondary
               font.family: Settings.data.ui.fontFixed
