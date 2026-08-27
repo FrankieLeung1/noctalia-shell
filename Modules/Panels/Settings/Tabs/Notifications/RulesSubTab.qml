@@ -87,7 +87,7 @@ ColumnLayout {
       NLabel {
         Layout.fillWidth: true
         label: (entryDelegate.isRegex ? "regex: " : "") + entryDelegate.pattern
-        description: entryDelegate.action === "block" ? I18n.tr("panels.notifications.rules-action-block") : (entryDelegate.action === "mute" ? I18n.tr("panels.notifications.rules-action-mute") : I18n.tr("panels.notifications.rules-action-hide"))
+        description: entryDelegate.action === "show" ? I18n.tr("panels.notifications.rules-action-show") : (entryDelegate.action === "block" ? I18n.tr("panels.notifications.rules-action-block") : (entryDelegate.action === "mute" ? I18n.tr("panels.notifications.rules-action-mute") : I18n.tr("panels.notifications.rules-action-hide")))
         labelColor: entryDelegate.pattern ? Color.mPrimary : Color.mOnSurface
       }
 

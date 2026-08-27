@@ -1516,6 +1516,8 @@
       "rules-action-label": "Action",
       "rules-action-mute": "Mute",
       "rules-action-mute-desc": "No sound, still shows popup and in history.",
+      "rules-action-show": "Show",
+      "rules-action-show-desc": "Shows popup and sound normally (useful for whitelisting).",
       "rules-add": "Add rule",
       "rules-delete": "Delete rule",
       "rules-description": "Match app name or content. Rules are checked in order, and the first match is applied.",

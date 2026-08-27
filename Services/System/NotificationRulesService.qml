@@ -74,6 +74,8 @@ function evaluate(appName, summary, body) {
     }
     if (matched) {
       const a = (r.action || "block").toLowerCase();
+      if (a === "show" || a === "allow" || a === "popup")
+        return "show";
       if (a === "mute" || a === "hide")
         return a;
       if (a === "silence")

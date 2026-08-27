@@ -74,6 +74,10 @@ Popup {
         label: I18n.tr("panels.notifications.rules-action-label")
         model: [
           {
+            "key": "show",
+            "name": I18n.tr("panels.notifications.rules-action-show")
+          },
+          {
             "key": "block",
             "name": I18n.tr("panels.notifications.rules-action-block")
           },
@@ -95,7 +99,7 @@ Popup {
 
       NLabel {
         Layout.fillWidth: true
-        label: _selectedAction === "block" ? I18n.tr("panels.notifications.rules-action-block-desc") : (_selectedAction === "mute" ? I18n.tr("panels.notifications.rules-action-mute-desc") : I18n.tr("panels.notifications.rules-action-hide-desc"))
+        label: _selectedAction === "show" ? I18n.tr("panels.notifications.rules-action-show-desc") : (_selectedAction === "block" ? I18n.tr("panels.notifications.rules-action-block-desc") : (_selectedAction === "mute" ? I18n.tr("panels.notifications.rules-action-mute-desc") : I18n.tr("panels.notifications.rules-action-hide-desc")))
         labelColor: Color.mOnSurfaceVariant
       }
     }
