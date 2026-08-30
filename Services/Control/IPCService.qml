@@ -247,6 +247,14 @@ Singleton {
       NotificationService.clearHistory();
     }
 
+    function markAsRead() {
+      NotificationService.updateLastSeenTs();
+    }
+
+    function markAllAsRead() {
+      NotificationService.updateLastSeenTs();
+    }
+
     function dismissOldest() {
       NotificationService.dismissOldestPopup();
     }
