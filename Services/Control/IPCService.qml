@@ -216,16 +216,17 @@ Singleton {
       } else {
         var str = String(range).trim().toLowerCase();
         if (str === "all" || str === "0") r = 0;
-        else if (str === "today" || str === "1") r = 1;
-        else if (str === "yesterday" || str === "2") r = 2;
-        else if (str === "earlier" || str === "3") r = 3;
+        else if (str === "unread" || str === "1") r = 1;
+        else if (str === "today" || str === "2") r = 2;
+        else if (str === "yesterday" || str === "3") r = 3;
+        else if (str === "earlier" || str === "4") r = 4;
         else {
           var parsed = parseInt(str);
-          if (!isNaN(parsed) && parsed >= 0 && parsed <= 3) r = parsed;
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= 4) r = parsed;
         }
       }
-      if (r < 0 || r > 3) {
-        Logger.w("IPC", "Invalid notification history range: " + range + ". Valid: 0/all, 1/today, 2/yesterday, 3/earlier");
+      if (r < 0 || r > 4) {
+        Logger.w("IPC", "Invalid notification history range: " + range + ". Valid: 0/all, 1/unread, 2/today, 3/yesterday, 4/earlier");
         return false;
       }
       NotificationService.defaultHistoryRange = r;

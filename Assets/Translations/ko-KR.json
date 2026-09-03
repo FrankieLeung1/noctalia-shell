@@ -662,6 +662,7 @@
     "range": {
       "earlier": "이전",
       "today": "오늘",
+      "unread": "읽지 않음",
       "yesterday": "어제"
     },
     "time": {

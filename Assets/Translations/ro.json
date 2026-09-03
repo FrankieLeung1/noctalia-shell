@@ -662,6 +662,7 @@
     "range": {
       "earlier": "Mai devreme",
       "today": "Astăzi",
+      "unread": "Necitite",
       "yesterday": "Ieri"
     },
     "time": {

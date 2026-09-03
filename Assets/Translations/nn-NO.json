@@ -640,6 +640,7 @@
     "range": {
       "earlier": "Tidlegare",
       "today": "I dag",
+      "unread": "Ulesne",
       "yesterday": "I går"
     },
     "time": {

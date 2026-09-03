@@ -673,6 +673,7 @@
     "range": {
       "earlier": "Earlier",
       "today": "Today",
+      "unread": "Unread",
       "yesterday": "Yesterday"
     },
     "time": {

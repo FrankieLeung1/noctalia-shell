@@ -662,6 +662,7 @@
     "range": {
       "earlier": "Wcześniej",
       "today": "Dzisiaj",
+      "unread": "Nieprzeczytane",
       "yesterday": "Wczoraj"
     },
     "time": {

@@ -662,6 +662,7 @@
     "range": {
       "earlier": "更早",
       "today": "今天",
+      "unread": "未读",
       "yesterday": "昨天"
     },
     "time": {

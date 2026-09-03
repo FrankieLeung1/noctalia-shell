@@ -26,7 +26,7 @@ Singleton {
   property real lastSeenTs: 0
   // Volatile property that doesn't persist to settings (similar to noctaliaPerformanceMode)
   property bool doNotDisturb: false
-  property int defaultHistoryRange: 1  // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
+  property int defaultHistoryRange: 1  // 0 = All, 1 = Unread, 2 = Today, 3 = Yesterday, 4 = Earlier
 
   // Models
   property ListModel popupModel: ListModel {}

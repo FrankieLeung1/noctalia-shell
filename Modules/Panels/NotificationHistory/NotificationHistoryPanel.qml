@@ -19,7 +19,18 @@ SmartPanel {
   preferredHeight: Math.round((Settings.data.notifications.enableMarkdown ? 640 : 540) * Style.uiScaleRatio)
 
   onOpened: {
+    if (panelContent) {
+      panelContent.sessionLastSeenTs = NotificationService.lastSeenTs;
+      panelContent.recalcRangeCounts();
+    }
+  }
+
+  onClosed: {
     NotificationService.updateLastSeenTs();
+    if (panelContent) {
+      panelContent.sessionLastSeenTs = NotificationService.lastSeenTs;
+      panelContent.recalcRangeCounts();
+    }
   }
 
   panelContent: Rectangle {
@@ -38,13 +49,13 @@ SmartPanel {
     Keys.onPressed: event => {
       // Tab navigation for categories
       if (event.key === Qt.Key_Tab) {
-        currentRange = (currentRange + 1) % 4;
+        currentRange = (currentRange + 1) % 5;
         event.accepted = true;
         return;
       }
 
       if (event.key === Qt.Key_Backtab) { // Shift+Tab
-        currentRange = (currentRange - 1 + 4) % 4;
+        currentRange = (currentRange - 1 + 5) % 5;
         event.accepted = true;
         return;
       }
@@ -250,11 +261,13 @@ SmartPanel {
     property real layoutWidth: Math.max(1, root.preferredWidth - Style.margin2L)
 
     // State (lazy-loaded with panelContent)
-    property var rangeCounts: [0, 0, 0, 0]
+    property bool groupByDate: true
+    property real sessionLastSeenTs: NotificationService.lastSeenTs
+    property var rangeCounts: [0, 0, 0, 0, 0]
     property var lastKnownDate: null  // Track the current date to detect day changes
 
     // UI state (lazy-loaded with panelContent)
-    // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
+    // 0 = All, 1 = Unread, 2 = Today, 3 = Yesterday, 4 = Earlier
     property int currentRange: NotificationService.defaultHistoryRange
     onCurrentRangeChanged: {
       NotificationService.defaultHistoryRange = currentRange;
@@ -300,14 +313,21 @@ SmartPanel {
       return 2;
     }
 
+    function isUnread(ts) {
+      var timestamp = ts instanceof Date ? ts.getTime() : (typeof ts === "number" ? ts : new Date(ts).getTime());
+      var unreadThreshold = panelContent.sessionLastSeenTs || NotificationService.lastSeenTs;
+      return timestamp > unreadThreshold;
+    }
+
     function recalcRangeCounts() {
       var m = NotificationService.historyModel;
       if (!m || typeof m.count === "undefined" || m.count <= 0) {
-        panelContent.rangeCounts = [0, 0, 0, 0];
+        panelContent.rangeCounts = [0, 0, 0, 0, 0];
         return;
       }
 
-      var counts = [0, 0, 0, 0];
+      var counts = [0, 0, 0, 0, 0];
+      var unreadThreshold = panelContent.sessionLastSeenTs || NotificationService.lastSeenTs;
 
       counts[0] = m.count;
 
@@ -315,8 +335,12 @@ SmartPanel {
         var item = m.get(i);
         if (!item || typeof item.timestamp === "undefined")
           continue;
+        var itemTs = item.timestamp instanceof Date ? item.timestamp.getTime() : (typeof item.timestamp === "number" ? item.timestamp : new Date(item.timestamp).getTime());
+        if (itemTs > unreadThreshold) {
+          counts[1] = counts[1] + 1;
+        }
         var r = rangeForTimestamp(item.timestamp);
-        counts[r + 1] = counts[r + 1] + 1;
+        counts[r + 2] = counts[r + 2] + 1;
       }
 
       panelContent.rangeCounts = counts;
@@ -325,7 +349,9 @@ SmartPanel {
     function isInCurrentRange(ts) {
       if (currentRange === 0)
         return true;
-      return rangeForTimestamp(ts) === (currentRange - 1);
+      if (currentRange === 1)
+        return isUnread(ts);
+      return rangeForTimestamp(ts) === (currentRange - 2);
     }
 
     function countForRange(range) {
@@ -444,7 +470,7 @@ SmartPanel {
             }
           }
 
-          // Time range tabs ([All] / [Today] / [Yesterday] / [Earlier])
+          // Time range tabs ([All] / [Unread] / [Today] / [Yesterday] / [Earlier])
           NTabBar {
             id: tabsBox
             Layout.fillWidth: true
@@ -464,7 +490,7 @@ SmartPanel {
 
             NTabButton {
               tabIndex: 1
-              text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(1) + ")"
+              text: I18n.tr("notifications.range.unread") + " (" + panelContent.countForRange(1) + ")"
               checked: tabsBox.currentIndex === 1
               onClicked: panelContent.currentRange = 1
               pointSize: Style.fontSizeXS
@@ -472,7 +498,7 @@ SmartPanel {
 
             NTabButton {
               tabIndex: 2
-              text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(2) + ")"
+              text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(2) + ")"
               checked: tabsBox.currentIndex === 2
               onClicked: panelContent.currentRange = 2
               pointSize: Style.fontSizeXS
@@ -480,9 +506,17 @@ SmartPanel {
 
             NTabButton {
               tabIndex: 3
-              text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(3) + ")"
+              text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(3) + ")"
               checked: tabsBox.currentIndex === 3
               onClicked: panelContent.currentRange = 3
+              pointSize: Style.fontSizeXS
+            }
+
+            NTabButton {
+              tabIndex: 4
+              text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(4) + ")"
+              checked: tabsBox.currentIndex === 4
+              onClicked: panelContent.currentRange = 4
               pointSize: Style.fontSizeXS
             }
           }

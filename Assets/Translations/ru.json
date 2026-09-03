@@ -662,6 +662,7 @@
     "range": {
       "earlier": "Ранее",
       "today": "Сегодня",
+      "unread": "Непрочитанные",
       "yesterday": "Вчера"
     },
     "time": {

@@ -662,6 +662,7 @@
     "range": {
       "earlier": "Раніше",
       "today": "Сьогодні",
+      "unread": "Непрочитані",
       "yesterday": "Учора"
     },
     "time": {

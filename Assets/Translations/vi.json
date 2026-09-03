@@ -662,6 +662,7 @@
     "range": {
       "earlier": "Trước đó",
       "today": "Hôm nay",
+      "unread": "Chưa đọc",
       "yesterday": "Hôm qua"
     },
     "time": {
