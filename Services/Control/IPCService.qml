@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.SystemTray
 import Quickshell.Wayland
 import Quickshell.Widgets
 
@@ -1065,6 +1066,391 @@ Singleton {
 
     function hide() {
       OSDService.hide();
+    }
+  }
+
+  // Tray IPC helpers
+  function _trayWildcardMatch(str, rule) {
+    if (!str || !rule)
+      return false;
+    const placeholder = '\uE000';
+    let processedRule = rule.replace(/\*/g, placeholder);
+    let escapedRule = processedRule.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    let pattern = '^' + escapedRule.replace(new RegExp(placeholder, 'g'), '.*') + '$';
+    try {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(str);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function _trayItemMatchesRule(item, rule) {
+    if (!item || !rule)
+      return false;
+    var candidates = [item.id, item.name, item.title, item.tooltipTitle, item.icon];
+    for (var c = 0; c < candidates.length; c++) {
+      var cand = candidates[c];
+      if (cand) {
+        if (root._trayWildcardMatch(cand, rule) || cand.toLowerCase() === rule.toLowerCase()) {
+          return true;
+        }
+        if (rule.length >= 3 && cand.toLowerCase().includes(rule.toLowerCase())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function _findTrayWidgetLocation(screenName) {
+    var widgets = Settings.getBarWidgetsForScreen(screenName || "");
+    var sections = ["right", "left", "center"];
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+      var list = widgets[sec] || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].id === "Tray") {
+          return { "section": sec, "index": i };
+        }
+      }
+    }
+    return null;
+  }
+
+  function _updateTrayWidgetSetting(screen, updateFn) {
+    var sections = ["left", "center", "right"];
+    var screenName = (screen && screen !== "all" && screen.trim().length > 0) ? screen.trim() : "";
+
+    if (screenName !== "") {
+      if (Settings.hasScreenOverride(screenName, "widgets")) {
+        var overrideWidgets = JSON.parse(JSON.stringify(Settings.getBarWidgetsForScreen(screenName)));
+        for (var s = 0; s < sections.length; s++) {
+          var secList = overrideWidgets[sections[s]] || [];
+          for (var i = 0; i < secList.length; i++) {
+            if (secList[i] && secList[i].id === "Tray") {
+              updateFn(secList[i]);
+            }
+          }
+        }
+        Settings.setScreenOverride(screenName, "widgets", overrideWidgets);
+      } else {
+        for (var s2 = 0; s2 < sections.length; s2++) {
+          var gList = Settings.data.bar.widgets[sections[s2]] || [];
+          for (var j = 0; j < gList.length; j++) {
+            if (gList[j] && gList[j].id === "Tray") {
+              updateFn(gList[j]);
+            }
+          }
+        }
+      }
+    } else {
+      for (var s3 = 0; s3 < sections.length; s3++) {
+        var globalList = Settings.data.bar.widgets[sections[s3]] || [];
+        for (var k = 0; k < globalList.length; k++) {
+          if (globalList[k] && globalList[k].id === "Tray") {
+            updateFn(globalList[k]);
+          }
+        }
+      }
+      var overrides = Settings.data.bar.screenOverrides || [];
+      for (var o = 0; o < overrides.length; o++) {
+        if (overrides[o] && overrides[o].widgets) {
+          for (var so = 0; so < sections.length; so++) {
+            var oList = overrides[o].widgets[sections[so]] || [];
+            for (var oi = 0; oi < oList.length; oi++) {
+              if (oList[oi] && oList[oi].id === "Tray") {
+                updateFn(oList[oi]);
+              }
+            }
+          }
+        }
+      }
+    }
+    Settings.saveImmediate();
+  }
+
+  function _getTrayPinnedList(screenName) {
+    var screen = (screenName && screenName !== "all" && screenName.trim().length > 0) ? screenName.trim() : "";
+    var widgets = Settings.getBarWidgetsForScreen(screen);
+    var sections = ["left", "center", "right"];
+    for (var s = 0; s < sections.length; s++) {
+      var list = widgets[sections[s]] || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].id === "Tray") {
+          return list[i].pinned || [];
+        }
+      }
+    }
+    return [];
+  }
+
+  function _getTrayBlacklist(screenName) {
+    var screen = (screenName && screenName !== "all" && screenName.trim().length > 0) ? screenName.trim() : "";
+    var widgets = Settings.getBarWidgetsForScreen(screen);
+    var sections = ["left", "center", "right"];
+    for (var s = 0; s < sections.length; s++) {
+      var list = widgets[sections[s]] || [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] && list[i].id === "Tray") {
+          return list[i].blacklist || [];
+        }
+      }
+    }
+    return [];
+  }
+
+  IpcHandler {
+    target: "tray"
+
+    function pin(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem) {
+        Logger.w("IPC", "Argument to 'tray pin' cannot be empty");
+        return false;
+      }
+      root._updateTrayWidgetSetting(screen, widget => {
+        var pinned = widget.pinned ? widget.pinned.slice() : [];
+        if (!pinned.includes(targetItem)) {
+          pinned.push(targetItem);
+          widget.pinned = pinned;
+        }
+      });
+      return true;
+    }
+
+    function unpin(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem) {
+        Logger.w("IPC", "Argument to 'tray unpin' cannot be empty");
+        return false;
+      }
+
+      var relatedNames = [targetItem];
+      if (SystemTray.items && SystemTray.items.values) {
+        var trayVals = SystemTray.items.values;
+        for (var i = 0; i < trayVals.length; i++) {
+          var tItem = trayVals[i];
+          if (tItem && root._trayItemMatchesRule(tItem, targetItem)) {
+            if (tItem.tooltipTitle)
+              relatedNames.push(tItem.tooltipTitle);
+            if (tItem.title)
+              relatedNames.push(tItem.title);
+            if (tItem.name)
+              relatedNames.push(tItem.name);
+            if (tItem.id)
+              relatedNames.push(tItem.id);
+          }
+        }
+      }
+
+      root._updateTrayWidgetSetting(screen, widget => {
+        var pinned = widget.pinned ? widget.pinned.slice() : [];
+        var newPinned = pinned.filter(p => {
+          for (var r = 0; r < relatedNames.length; r++) {
+            var rel = relatedNames[r];
+            if (p === rel || p.toLowerCase() === rel.toLowerCase() || root._trayWildcardMatch(rel, p) || root._trayWildcardMatch(p, rel) || (rel.length >= 3 && p.toLowerCase().includes(rel.toLowerCase())) || (p.length >= 3 && rel.toLowerCase().includes(p.toLowerCase()))) {
+              return false;
+            }
+          }
+          return true;
+        });
+        widget.pinned = newPinned;
+      });
+      return true;
+    }
+
+    function togglePin(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem) {
+        Logger.w("IPC", "Argument to 'tray togglePin' cannot be empty");
+        return false;
+      }
+      if (isPinned(targetItem, screen)) {
+        return unpin(targetItem, screen);
+      } else {
+        return pin(targetItem, screen);
+      }
+    }
+
+    function isPinned(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem)
+        return false;
+      var pinnedList = root._getTrayPinnedList(screen);
+      var relatedNames = [targetItem];
+      if (SystemTray.items && SystemTray.items.values) {
+        var trayVals = SystemTray.items.values;
+        for (var i = 0; i < trayVals.length; i++) {
+          var tItem = trayVals[i];
+          if (tItem && root._trayItemMatchesRule(tItem, targetItem)) {
+            if (tItem.tooltipTitle)
+              relatedNames.push(tItem.tooltipTitle);
+            if (tItem.title)
+              relatedNames.push(tItem.title);
+            if (tItem.name)
+              relatedNames.push(tItem.name);
+            if (tItem.id)
+              relatedNames.push(tItem.id);
+          }
+        }
+      }
+
+      for (var j = 0; j < pinnedList.length; j++) {
+        var p = pinnedList[j];
+        for (var r = 0; r < relatedNames.length; r++) {
+          var rel = relatedNames[r];
+          if (p === rel || p.toLowerCase() === rel.toLowerCase() || root._trayWildcardMatch(rel, p) || root._trayWildcardMatch(p, rel) || (rel.length >= 3 && p.toLowerCase().includes(rel.toLowerCase())) || (p.length >= 3 && rel.toLowerCase().includes(p.toLowerCase()))) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function listItems(): string {
+      var res = [];
+      if (SystemTray.items && SystemTray.items.values) {
+        var items = SystemTray.items.values;
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          if (it) {
+            res.push({
+              "id": it.id || "",
+              "name": it.name || "",
+              "title": it.title || "",
+              "tooltipTitle": it.tooltipTitle || "",
+              "icon": it.icon || "",
+              "status": it.status !== undefined ? it.status : -1
+            });
+          }
+        }
+      }
+      return JSON.stringify(res, null, 2);
+    }
+
+    function getPinned(screen: string): string {
+      return JSON.stringify(root._getTrayPinnedList(screen), null, 2);
+    }
+
+    function listPinned(screen: string): string {
+      return getPinned(screen);
+    }
+
+    function blacklist(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem) {
+        Logger.w("IPC", "Argument to 'tray blacklist' cannot be empty");
+        return false;
+      }
+      root._updateTrayWidgetSetting(screen, widget => {
+        var bl = widget.blacklist ? widget.blacklist.slice() : [];
+        if (!bl.includes(targetItem)) {
+          bl.push(targetItem);
+          widget.blacklist = bl;
+        }
+      });
+      return true;
+    }
+
+    function unblacklist(item: string, screen: string): bool {
+      var targetItem = item ? item.trim() : "";
+      if (!targetItem) {
+        Logger.w("IPC", "Argument to 'tray unblacklist' cannot be empty");
+        return false;
+      }
+      root._updateTrayWidgetSetting(screen, widget => {
+        var bl = widget.blacklist ? widget.blacklist.slice() : [];
+        var newBl = bl.filter(b => b !== targetItem);
+        widget.blacklist = newBl;
+      });
+      return true;
+    }
+
+    function getBlacklist(screen: string): string {
+      return JSON.stringify(root._getTrayBlacklist(screen), null, 2);
+    }
+
+    function toggleDrawer(screen: string) {
+      var openPanelOnScreen = function (targetScreen) {
+        if (!targetScreen)
+          return;
+        var panel = PanelService.getPanel("trayDrawerPanel", targetScreen);
+        if (panel) {
+          var loc = root._findTrayWidgetLocation(targetScreen.name);
+          if (loc) {
+            panel.widgetSection = loc.section;
+            panel.widgetIndex = loc.index;
+          }
+          panel.toggle(null, "Tray");
+        }
+      };
+
+      if (screen && screen !== "all" && screen.trim().length > 0) {
+        var foundScreen = Quickshell.screens.find(s => s.name === screen.trim());
+        if (foundScreen) {
+          openPanelOnScreen(foundScreen);
+        } else {
+          Logger.w("IPC", "tray toggleDrawer: unknown screen: " + screen);
+        }
+      } else {
+        root.screenDetector.withCurrentScreen(s => {
+          openPanelOnScreen(s);
+        });
+      }
+    }
+
+    function openDrawer(screen: string) {
+      var openPanelOnScreen = function (targetScreen) {
+        if (!targetScreen)
+          return;
+        var panel = PanelService.getPanel("trayDrawerPanel", targetScreen);
+        if (panel) {
+          var loc = root._findTrayWidgetLocation(targetScreen.name);
+          if (loc) {
+            panel.widgetSection = loc.section;
+            panel.widgetIndex = loc.index;
+          }
+          panel.open(null, "Tray");
+        }
+      };
+
+      if (screen && screen !== "all" && screen.trim().length > 0) {
+        var foundScreen = Quickshell.screens.find(s => s.name === screen.trim());
+        if (foundScreen) {
+          openPanelOnScreen(foundScreen);
+        } else {
+          Logger.w("IPC", "tray openDrawer: unknown screen: " + screen);
+        }
+      } else {
+        root.screenDetector.withCurrentScreen(s => {
+          openPanelOnScreen(s);
+        });
+      }
+    }
+
+    function closeDrawer(screen: string) {
+      var closePanelOnScreen = function (targetScreen) {
+        if (!targetScreen)
+          return;
+        var panel = PanelService.getPanel("trayDrawerPanel", targetScreen);
+        if (panel) {
+          panel.close();
+        }
+      };
+
+      if (screen && screen !== "all" && screen.trim().length > 0) {
+        var foundScreen = Quickshell.screens.find(s => s.name === screen.trim());
+        if (foundScreen) {
+          closePanelOnScreen(foundScreen);
+        } else {
+          Logger.w("IPC", "tray closeDrawer: unknown screen: " + screen);
+        }
+      } else {
+        root.screenDetector.withCurrentScreen(s => {
+          closePanelOnScreen(s);
+        });
+      }
     }
   }
 }

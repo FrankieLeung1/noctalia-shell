@@ -126,12 +126,22 @@ SmartPanel {
     }
 
     function isPinned(item) {
-      if (!pinnedList || pinnedList.length === 0)
+      if (!pinnedList || pinnedList.length === 0 || !item)
         return false;
-      const title = item?.tooltipTitle || item?.name || item?.id || "";
+      const candidates = [item.id, item.name, item.title, item.tooltipTitle, item.icon];
       for (var i = 0; i < pinnedList.length; i++) {
-        if (wildCardMatch(title, pinnedList[i]))
-          return true;
+        var rule = pinnedList[i];
+        for (var c = 0; c < candidates.length; c++) {
+          var cand = candidates[c];
+          if (cand) {
+            if (wildCardMatch(cand, rule) || cand.toLowerCase() === rule.toLowerCase()) {
+              return true;
+            }
+            if (rule.length >= 3 && cand.toLowerCase().includes(rule.toLowerCase())) {
+              return true;
+            }
+          }
+        }
       }
       return false;
     }

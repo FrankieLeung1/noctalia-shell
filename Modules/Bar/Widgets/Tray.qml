@@ -142,8 +142,6 @@ Item {
           continue;
         }
 
-        const title = item.tooltipTitle || item.name || item.id || "";
-
         // Skip passive items if hidePassive is enabled
         if (root.hidePassive && item.status !== undefined && (item.status === SystemTray.Passive || item.status === 0)) {
           continue;
@@ -154,7 +152,7 @@ Item {
         if (root.blacklist && root.blacklist.length > 0) {
           for (var j = 0; j < root.blacklist.length; j++) {
             const rule = root.blacklist[j];
-            if (wildCardMatch(title, rule)) {
+            if (root.itemMatchesRule(item, rule)) {
               isBlacklisted = true;
               break;
             }
@@ -179,10 +177,9 @@ Item {
         let pinnedItems = [];
         for (var k = 0; k < newItems.length; k++) {
           const item2 = newItems[k];
-          const title2 = item2.tooltipTitle || item2.name || item2.id || "";
           for (var m = 0; m < pinned.length; m++) {
             const rule2 = pinned[m];
-            if (wildCardMatch(title2, rule2)) {
+            if (root.itemMatchesRule(item2, rule2)) {
               pinnedItems.push(item2);
               break;
             }
@@ -211,6 +208,24 @@ Item {
         dropdownItems = newItems;
       }
     }
+  }
+
+  function itemMatchesRule(item, rule) {
+    if (!item || !rule)
+      return false;
+    var candidates = [item.id, item.name, item.title, item.tooltipTitle, item.icon];
+    for (var c = 0; c < candidates.length; c++) {
+      var cand = candidates[c];
+      if (cand) {
+        if (wildCardMatch(cand, rule) || cand.toLowerCase() === rule.toLowerCase()) {
+          return true;
+        }
+        if (rule.length >= 3 && cand.toLowerCase().includes(rule.toLowerCase())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   function updateFilteredItems() {
