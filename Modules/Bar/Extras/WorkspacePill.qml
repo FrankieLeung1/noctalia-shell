@@ -147,10 +147,34 @@ Item {
       }
     }
 
+    border.color: {
+      if (workspace.isFocused)
+        return Color.resolveColorKey(focusedColor);
+      if (workspace.isUrgent)
+        return Color.mError;
+      if (workspace.isOccupied)
+        return Color.resolveColorKey(occupiedColor);
+      return Color.resolveColorKey(emptyColor);
+    }
+    border.width: (workspace.isFocused || workspace.isActive) ? Style.borderM : 0
+
     // Material 3-inspired smooth animations
     Behavior on scale {
       NumberAnimation {
         duration: Style.animationNormal
+        easing.type: Easing.OutBack
+      }
+    }
+    Behavior on border.color {
+      enabled: !Color.isTransitioning
+      ColorAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.InOutQuad
+      }
+    }
+    Behavior on border.width {
+      NumberAnimation {
+        duration: Style.animationFast
         easing.type: Easing.OutBack
       }
     }

@@ -845,8 +845,14 @@ Item {
       color: Style.capsuleColor
       radius: Style.radiusS
       border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (groupHoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
-      border.width: PowerProfileService.noctaliaPerformanceMode ? 0 : Style.borderS
+      border.width: PowerProfileService.noctaliaPerformanceMode ? 0 : ((workspaceModel.isFocused || workspaceModel.isActive) ? Style.borderM : Style.borderS)
 
+      Behavior on border.width {
+        NumberAnimation {
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
+        }
+      }
       Behavior on width {
         NumberAnimation {
           duration: Style.animationFast
