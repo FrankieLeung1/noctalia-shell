@@ -250,6 +250,7 @@ Item {
 
       const hlWorkspaces = Hyprland.workspaces.values;
       const occupiedIds = getOccupiedWorkspaceIds();
+      const workspaceList = [];
 
       for (var i = 0; i < hlWorkspaces.length; i++) {
         const ws = hlWorkspaces[i];
@@ -268,7 +269,13 @@ Item {
         };
 
         workspaceCache[ws.id] = wsData;
-        workspaces.append(wsData);
+        workspaceList.push(wsData);
+      }
+
+      workspaceList.sort((a, b) => a.id - b.id);
+
+      for (var j = 0; j < workspaceList.length; j++) {
+        workspaces.append(workspaceList[j]);
       }
     } catch (e) {
       Logger.e("HyprlandService", "Error updating workspaces:", e);

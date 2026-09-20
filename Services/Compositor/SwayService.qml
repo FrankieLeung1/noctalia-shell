@@ -294,6 +294,7 @@ Item {
       }
 
       const hlWorkspaces = I3.workspaces.values;
+      const workspaceList = [];
 
       for (var i = 0; i < hlWorkspaces.length; i++) {
         const ws = hlWorkspaces[i];
@@ -311,7 +312,13 @@ Item {
           "handle": ws
         };
 
-        workspaces.append(wsData);
+        workspaceList.push(wsData);
+      }
+
+      workspaceList.sort((a, b) => a.idx - b.idx);
+
+      for (var j = 0; j < workspaceList.length; j++) {
+        workspaces.append(workspaceList[j]);
       }
     } catch (e) {
       Logger.e("SwayService", "Error updating workspaces:", e);
