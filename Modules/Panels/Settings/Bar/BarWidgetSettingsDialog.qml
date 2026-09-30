@@ -64,9 +64,15 @@ Popup {
         Layout.preferredHeight: implicitHeight
 
         NText {
-          text: I18n.tr("system.widget-settings-title", {
-                          "widget": root.widgetId
-                        })
+          text: {
+            var currentData = root.settingsCache && root.settingsCache.id ? root.settingsCache : root.widgetData;
+            var name = (currentData && currentData.id === "CustomButton" && currentData.ipcIdentifier && currentData.ipcIdentifier.trim() !== "")
+              ? currentData.ipcIdentifier
+              : root.widgetId;
+            return I18n.tr("system.widget-settings-title", {
+                            "widget": name
+                          });
+          }
           pointSize: Style.fontSizeL
           font.weight: Style.fontWeightBold
           color: Color.mPrimary

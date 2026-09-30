@@ -39,6 +39,27 @@ NBox {
     return "arrow-right"; // Default fallback icon
   }
 
+  // Get display name for a widget
+  function getWidgetDisplayName(widgetData) {
+    if (!widgetData) {
+      return "";
+    }
+    var id = typeof widgetData === "string" ? widgetData : widgetData.id;
+    if (typeof widgetData === "object" && widgetData.id === "CustomButton" && widgetData.ipcIdentifier && widgetData.ipcIdentifier.trim() !== "") {
+      return widgetData.ipcIdentifier;
+    }
+    // For plugin widgets, get the actual plugin name from manifest
+    if (root.widgetRegistry && root.widgetRegistry.isPluginWidget(id)) {
+      var pluginId = id.replace("plugin:", "");
+      var manifest = PluginRegistry.getPluginManifest(pluginId);
+      if (manifest && manifest.name) {
+        return manifest.name;
+      }
+      return pluginId;
+    }
+    return id || "";
+  }
+
   property var pluginSettingsEntryPoints: ["settings"]
   property var widgetRegistry: null
   property string settingsDialogComponent: "invalid-settings-dialog"
@@ -574,19 +595,7 @@ NBox {
               spacing: Style.marginXXS
 
               NText {
-                text: {
-                  // For plugin widgets, get the actual plugin name from manifest
-                  if (root.widgetRegistry && root.widgetRegistry.isPluginWidget(modelData.id)) {
-                    const pluginId = modelData.id.replace("plugin:", "");
-                    const manifest = PluginRegistry.getPluginManifest(pluginId);
-                    if (manifest && manifest.name) {
-                      return manifest.name;
-                    }
-                    // Fallback: just strip the prefix
-                    return pluginId;
-                  }
-                  return modelData.id;
-                }
+                text: root.getWidgetDisplayName(modelData)
                 pointSize: Style.fontSizeXS
                 color: root.getWidgetColor(modelData)[1]
                 horizontalAlignment: Text.AlignLeft
@@ -901,7 +910,7 @@ NBox {
               if (draggedWidget) {
                 dragGhost.width = draggedWidget.width;
                 dragGhost.color = root.getWidgetColor(draggedModelData)[0];
-                ghostText.text = draggedModelData.id;
+                ghostText.text = root.getWidgetDisplayName(draggedModelData);
               }
 
               var startGlobal = flowDragArea.mapToGlobal(mouse.x, mouse.y);
