@@ -299,7 +299,7 @@ Item {
           var widgets = BarService.getAllWidgetInstances(null, screen.name);
           for (var i = 0; i < widgets.length; i++) {
             var widget = widgets[i];
-            if (!widget || !widget.visible || widget.widgetId === "Spacer") {
+            if (!widget || !widget.visible || !widget.enabled || (widget.opacity !== undefined && widget.opacity <= 0) || widget.widgetId === "Spacer") {
               continue;
             }
             var localPos = mapToItem(widget, xPos, yPos);

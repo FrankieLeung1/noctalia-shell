@@ -41,7 +41,7 @@ Item {
   implicitHeight: isVerticalBar ? getImplicitSize(loader.item, "implicitHeight") : barHeight
 
   // Remove layout space left by hidden widgets
-  visible: loader.item ? ((loader.item.opacity > 0.0) || (loader.item.hasOwnProperty("hideMode") && loader.item.hideMode === "transparent")) : false
+  visible: loader.item ? ((loader.item.opacity > 0.0) || (loader.item.hasOwnProperty("hideMode") && (loader.item.hideMode === "transparent" || loader.item.hideMode === "maxTransparent"))) : false
 
   function getImplicitSize(item, prop) {
     return (item && item.visible) ? Math.round(item[prop]) : 0;

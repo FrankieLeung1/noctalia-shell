@@ -304,6 +304,7 @@ Item {
   MouseArea {
     anchors.fill: parent
     hoverEnabled: true
+    enabled: root.enabled && root.visible && root.opacity > 0
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
     cursorShape: root.clicked ? Qt.PointingHandCursor : Qt.ArrowCursor
     onEntered: {

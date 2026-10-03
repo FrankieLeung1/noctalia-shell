@@ -221,12 +221,16 @@ Item {
 
   implicitWidth: pill.width
   implicitHeight: pill.height
+  visible: _pillVisible
+  opacity: _pillOpacity
+  enabled: _pillVisible && _pillOpacity > 0
 
   BarPill {
     id: pill
 
     visible: _pillVisible
     opacity: _pillOpacity
+    enabled: _pillVisible && _pillOpacity > 0
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     iconPosition: root.iconPosition
