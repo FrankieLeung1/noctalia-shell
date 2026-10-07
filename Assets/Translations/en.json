@@ -14,6 +14,7 @@
     "enable-wifi": "Enable Wi-Fi",
     "launcher-settings": "Launcher settings",
     "lower-to-bottom": "Lower to bottom",
+    "mark-all-read": "Mark all as read",
     "open-calendar": "Open calendar",
     "open-display-settings": "Display settings",
     "open-launcher": "Open launcher",
@@ -23,6 +24,7 @@
     "run-custom-command": "Run custom command",
     "show-active-only": "Show active only",
     "show-all": "Show all",
+    "toggle-dnd": "Toggle Do Not Disturb",
     "toggle-mute": "Toggle mute",
     "widget-settings": "Widget settings"
   },
@@ -222,6 +224,7 @@
       "hide-widget-when-zero-label": "Hide icon when no notifications",
       "hide-widget-when-zero-unread-description": "Hide the notification icon when there are no unread notifications.",
       "hide-widget-when-zero-unread-label": "Hide icon when no unread notifications",
+      "middle-click-action-description": "Choose the action performed when clicking the widget with the middle mouse button.",
       "show-unread-badge-description": "Display a badge showing the number of unread notifications.",
       "show-unread-badge-label": "Show unread badge",
       "unread-badge-color-description": "Select the color for the unread notification badge.",

@@ -232,11 +232,16 @@ Singleton {
                                     "textColor": "none"
                                   },
                                   "NotificationHistory": {
+                                    "displayMode": "onhover",
+                                    "iconPosition": "left",
                                     "showUnreadBadge": true,
                                     "hideWhenZero": false,
                                     "hideWhenZeroUnread": false,
                                     "unreadBadgeColor": "primary",
-                                    "iconColor": "none"
+                                    "iconColor": "none",
+                                    "textColor": "none",
+                                    "middleClickAction": "markAllRead",
+                                    "middleClickCommand": ""
                                   },
                                   "SessionMenu": {
                                     "iconColor": "error"

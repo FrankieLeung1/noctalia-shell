@@ -20,6 +20,9 @@ Item {
   property bool oppositeDirection: false
   property bool hovered: false
   property bool rotateText: false
+  property bool showBadge: false
+  property bool badgeVisible: false
+  property color badgeColor: "transparent"
   property color customBackgroundColor: "transparent"
   property color customTextIconColor: "transparent"
   property color customIconColor: "transparent"
@@ -66,6 +69,9 @@ Item {
         oppositeDirection: root.oppositeDirection
         hovered: root.hovered
         rotateText: root.rotateText
+        showBadge: root.showBadge
+        badgeVisible: root.badgeVisible
+        badgeColor: root.badgeColor
         customBackgroundColor: root.customBackgroundColor
         customTextIconColor: root.customTextIconColor
         customIconColor: root.customIconColor
@@ -95,6 +101,9 @@ Item {
         forceClose: root.forceClose
         oppositeDirection: root.oppositeDirection
         hovered: root.hovered
+        showBadge: root.showBadge
+        badgeVisible: root.badgeVisible
+        badgeColor: root.badgeColor
         customBackgroundColor: root.customBackgroundColor
         customTextIconColor: root.customTextIconColor
         customIconColor: root.customIconColor

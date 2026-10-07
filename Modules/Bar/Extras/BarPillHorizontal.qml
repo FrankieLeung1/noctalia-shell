@@ -20,6 +20,9 @@ Item {
   property bool oppositeDirection: false
   property string iconPosition: ""
   property bool hovered: false
+  property bool showBadge: false
+  property bool badgeVisible: false
+  property color badgeColor: "transparent"
   property color customBackgroundColor: "transparent"
   property color customTextIconColor: "transparent"
   property color customIconColor: "transparent"
@@ -197,6 +200,25 @@ Item {
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics
       y: (iconCircle.height - height) / 2 + (height - contentHeight) / 2
+    }
+
+    Loader {
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.horizontalCenterOffset: iconCircle.width / 4
+      anchors.verticalCenterOffset: -iconCircle.height / 4
+      z: 2
+      active: root.showBadge
+      sourceComponent: Rectangle {
+        id: badge
+        height: 7
+        width: height
+        radius: Style.radiusXS
+        color: root.hovered ? Color.mOnHover : (root.badgeColor.a > 0 ? root.badgeColor : Color.mError)
+        border.color: Color.mSurface
+        border.width: Style.borderS
+        visible: root.badgeVisible
+      }
     }
   }
 
