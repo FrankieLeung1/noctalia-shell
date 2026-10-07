@@ -10,6 +10,7 @@ Item {
   required property ShellScreen screen
 
   property string icon: ""
+  property string iconImage: ""
   property string iconPosition: ""
   property string text: ""
   property string suffix: ""
@@ -59,6 +60,7 @@ Item {
       BarPillVertical {
         screen: root.screen
         icon: root.icon
+        iconImage: root.iconImage
         iconPosition: root.iconPosition
         text: root.text
         suffix: root.suffix
@@ -92,6 +94,7 @@ Item {
       BarPillHorizontal {
         screen: root.screen
         icon: root.icon
+        iconImage: root.iconImage
         iconPosition: root.iconPosition
         text: root.text
         suffix: root.suffix

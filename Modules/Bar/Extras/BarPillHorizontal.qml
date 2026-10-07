@@ -11,6 +11,7 @@ Item {
   required property ShellScreen screen
 
   property string icon: ""
+  property string iconImage: ""
   property string text: ""
   property string suffix: ""
   property var tooltipText
@@ -32,7 +33,7 @@ Item {
 
   // Effective shown state (true if hovered/animated open or forced)
   readonly property bool revealed: !forceClose && (forceOpen || showPill)
-  readonly property bool hasIcon: root.icon !== ""
+  readonly property bool hasIcon: root.icon !== "" || root.iconImage !== ""
 
   signal shown
   signal hidden
@@ -192,6 +193,7 @@ Item {
     x: iconPosition ? (iconPosition === "right" ? (parent.width - width) : 0) : (oppositeDirection ? 0 : (parent.width - width))
 
     NIcon {
+      visible: root.iconImage === "" && root.icon !== ""
       icon: root.icon
       pointSize: iconSize
       applyUiScale: false
@@ -200,6 +202,17 @@ Item {
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics
       y: (iconCircle.height - height) / 2 + (height - contentHeight) / 2
+    }
+
+    NImageRounded {
+      visible: root.iconImage !== ""
+      anchors.centerIn: parent
+      width: Math.round(iconSize * 1.25)
+      height: width
+      radius: Style.radiusXS
+      imagePath: root.iconImage
+      fallbackIcon: root.icon
+      fallbackIconSize: iconSize
     }
 
     Loader {

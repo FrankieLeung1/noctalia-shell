@@ -48,12 +48,40 @@ Item {
 
   readonly property color badgeColor: Color.resolveColorKey(unreadBadgeColor)
 
+  property int revision: 0
+
+  Connections {
+    target: NotificationService.historyModel
+    function onCountChanged() {
+      root.revision++;
+    }
+  }
+
+  Connections {
+    target: NotificationService.popupModel
+    function onCountChanged() {
+      root.revision++;
+    }
+  }
+
+  Connections {
+    target: NotificationService
+    function onLastSeenTsChanged() {
+      root.revision++;
+    }
+    function onDoNotDisturbChanged() {
+      root.revision++;
+    }
+  }
+
   readonly property var unreadInfo: {
+    var _rev = root.revision;
     var since = NotificationService.lastSeenTs;
     var model = NotificationService.historyModel;
     var totalCount = model.count;
     var unreadCount = 0;
-    var latestAppName = "";
+    var latestTitle = "";
+    var latestItem = null;
     var uniqueApps = [];
 
     for (var i = 0; i < totalCount; i++) {
@@ -63,23 +91,44 @@ Item {
       var ts = item.timestamp instanceof Date ? item.timestamp.getTime() : item.timestamp;
       if (ts > since) {
         unreadCount++;
-        var appName = (item.appName || "").trim();
-        if (!appName) {
-          appName = item.summary ? item.summary.trim() : I18n.tr("common.notification");
+        var title = (item.summary || "").trim().replace(/\s+/g, " ");
+        if (!title) {
+          title = (item.appName || "").trim() || (item.body || "").trim().replace(/\s+/g, " ") || I18n.tr("common.notification");
         }
-        if (latestAppName === "") {
-          latestAppName = appName;
+        if (latestTitle === "") {
+          latestTitle = title;
+          latestItem = item;
         }
+        var appName = (item.appName || "").trim() || title;
         if (uniqueApps.indexOf(appName) === -1) {
           uniqueApps.push(appName);
         }
       }
     }
 
+    var appIcon = "";
+    if (unreadCount > 0 && uniqueApps.length === 1 && latestItem) {
+      var img = latestItem.cachedImage || latestItem.originalImage || "";
+      if (img && (img.startsWith("file://") || img.startsWith("/") || img.startsWith("image://"))) {
+        appIcon = img;
+      } else {
+        var rawApp = (latestItem.appName || "").trim();
+        if (rawApp) {
+          var resolved = ThemeIcons.iconForAppId(rawApp.toLowerCase(), "");
+          if (resolved) {
+            appIcon = resolved;
+          } else {
+            appIcon = ThemeIcons.iconFromName(rawApp.toLowerCase(), "");
+          }
+        }
+      }
+    }
+
     return {
       count: unreadCount,
-      latestAppName: latestAppName,
-      appCount: uniqueApps.length
+      latestTitle: latestTitle,
+      appCount: uniqueApps.length,
+      appIcon: appIcon
     };
   }
 
@@ -135,7 +184,8 @@ Item {
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
-    text: root.unreadInfo.latestAppName
+    iconImage: NotificationService.doNotDisturb ? "" : root.unreadInfo.appIcon
+    text: root.unreadInfo.latestTitle
     suffix: root.unreadInfo.appCount > 1 ? ` + ${root.unreadInfo.appCount - 1}` : ""
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow" && text !== ""

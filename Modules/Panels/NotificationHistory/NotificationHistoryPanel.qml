@@ -889,7 +889,7 @@ SmartPanel {
                           width: notificationDelegate.iconSize
                           height: notificationDelegate.iconSize
                           radius: Math.min(Style.radiusL, width / 2)
-                          imagePath: model.cachedImage || model.originalImage || ""
+                          imagePath: model.cachedImage || model.originalImage || (model.appName ? (ThemeIcons.iconForAppId(model.appName.toLowerCase(), "") || ThemeIcons.iconFromName(model.appName.toLowerCase(), "")) : "")
                           borderColor: "transparent"
                           borderWidth: 0
                           fallbackIcon: "bell"

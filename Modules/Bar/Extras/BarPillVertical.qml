@@ -11,6 +11,7 @@ Item {
   required property ShellScreen screen
 
   property string icon: ""
+  property string iconImage: ""
   property string text: ""
   property string suffix: ""
   property var tooltipText
@@ -59,7 +60,7 @@ Item {
 
   // Effective shown state (true if animated open or forced, but not if force closed)
   readonly property bool revealed: !forceClose && (forceOpen || showPill)
-  readonly property bool hasIcon: root.icon !== ""
+  readonly property bool hasIcon: root.icon !== "" || root.iconImage !== ""
 
   // Always prioritize hover color, then the custom one and finally the fallback color
   readonly property color bgColor: hovered ? Color.mHover : (customBackgroundColor.a > 0) ? customBackgroundColor : Style.capsuleColor
@@ -200,6 +201,7 @@ Item {
     anchors.horizontalCenter: parent.horizontalCenter
 
     NIcon {
+      visible: root.iconImage === "" && root.icon !== ""
       icon: root.icon
       pointSize: iconSize
       applyUiScale: false
@@ -208,6 +210,17 @@ Item {
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics
       y: (iconCircle.height - height) / 2 + (height - contentHeight) / 2
+    }
+
+    NImageRounded {
+      visible: root.iconImage !== ""
+      anchors.centerIn: parent
+      width: Math.round(iconSize * 1.25)
+      height: width
+      radius: Style.radiusXS
+      imagePath: root.iconImage
+      fallbackIcon: root.icon
+      fallbackIconSize: iconSize
     }
 
     Loader {

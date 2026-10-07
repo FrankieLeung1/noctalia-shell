@@ -469,7 +469,10 @@ Singleton {
                                                 "time": time.getTime()
                                               }));
 
-    const image = n.image || getIcon(n.appIcon);
+    let image = n.image || getIcon(n.appIcon);
+    if (!image && (n.desktopEntry || n.appName)) {
+      image = ThemeIcons.iconForAppId((n.desktopEntry || n.appName).toLowerCase(), "") || ThemeIcons.iconFromName((n.desktopEntry || n.appName).toLowerCase(), "");
+    }
     const imageId = generateImageId(n, image);
     queueImage(image, n.appName || "", n.summary || "", id);
 

@@ -621,7 +621,7 @@ Variants {
                     Layout.preferredHeight: Math.round(40 * Style.uiScaleRatio)
                     Layout.alignment: Qt.AlignVCenter
                     radius: Math.min(Style.radiusL, Layout.preferredWidth / 2)
-                    imagePath: model.originalImage || ""
+                    imagePath: model.cachedImage || model.originalImage || (model.appName ? (ThemeIcons.iconForAppId(model.appName.toLowerCase(), "") || ThemeIcons.iconFromName(model.appName.toLowerCase(), "")) : "")
                     borderColor: "transparent"
                     borderWidth: 0
                     fallbackIcon: "bell"
@@ -768,7 +768,7 @@ Variants {
                   Layout.preferredHeight: Math.round(24 * Style.uiScaleRatio)
                   Layout.alignment: Qt.AlignVCenter
                   radius: Style.radiusXS
-                  imagePath: model.originalImage || ""
+                  imagePath: model.cachedImage || model.originalImage || (model.appName ? (ThemeIcons.iconForAppId(model.appName.toLowerCase(), "") || ThemeIcons.iconFromName(model.appName.toLowerCase(), "")) : "")
                   borderColor: "transparent"
                   borderWidth: 0
                   fallbackIcon: "bell"
