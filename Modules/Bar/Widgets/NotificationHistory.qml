@@ -110,10 +110,18 @@ Item {
       }
     }
 
-    var isGenericFreedesktopIcon = function(origImg) {
-      if (!origImg)
-        return false;
-      var lower = origImg.toLowerCase();
+    var isGenericFreedesktopIcon = function(origImg, appName) {
+      if (!origImg && !appName)
+        return true;
+      var raw = (origImg || "").trim();
+      if (raw.startsWith("image://icon/")) {
+        raw = raw.substring("image://icon/".length);
+      }
+      var qIdx = raw.indexOf("?");
+      if (qIdx !== -1) {
+        raw = raw.substring(0, qIdx);
+      }
+      var baseName = raw.toLowerCase().trim();
       var genericNames = [
         "application-x-executable",
         "dialog-information",
@@ -129,30 +137,45 @@ Item {
         "dialog-information-symbolic",
         "notification"
       ];
-      for (var k = 0; k < genericNames.length; k++) {
-        var g = genericNames[k];
-        if (lower.indexOf("fallback=" + g) !== -1 || lower.indexOf("/icon/" + g) !== -1 || lower.indexOf("/" + g + ".") !== -1 || lower === g || lower === "image://icon/" + g) {
-          return true;
-        }
+      if (genericNames.indexOf(baseName) !== -1) {
+        return true;
       }
-      return false;
+      var app = (appName || "").toLowerCase().trim();
+      if (genericNames.indexOf(app) !== -1) {
+        return true;
+      }
+      // If baseName or appName exists in desktop entries or icon theme, it is a valid app icon
+      if (baseName && (ThemeIcons.iconExists(baseName) || ThemeIcons.findAppEntry(baseName))) {
+        return false;
+      }
+      if (app && (ThemeIcons.iconExists(app) || ThemeIcons.findAppEntry(app))) {
+        return false;
+      }
+      // If it's a direct file/resource image path and not a known generic name
+      if (raw.startsWith("file://") || raw.startsWith("/")) {
+        for (var k = 0; k < genericNames.length; k++) {
+          if (baseName.indexOf(genericNames[k]) !== -1) {
+            return true;
+          }
+        }
+        return false;
+      }
+      return true;
     };
 
     var appIcon = "";
     if (unreadCount > 0 && uniqueApps.length === 1 && latestItem) {
       var orig = (latestItem.originalImage || "").trim();
-      var isGeneric = isGenericFreedesktopIcon(orig);
+      var rawApp = (latestItem.appName || "").trim();
+      var isGeneric = isGenericFreedesktopIcon(orig, rawApp);
       if (!isGeneric) {
         var img = latestItem.cachedImage || latestItem.originalImage || "";
         if (img && (img.startsWith("file://") || img.startsWith("/") || img.startsWith("image://"))) {
           appIcon = img;
-        } else {
-          var rawApp = (latestItem.appName || "").trim();
-          if (rawApp) {
-            var resolved = ThemeIcons.findAppEntry(rawApp.toLowerCase()) ? ThemeIcons.iconForAppId(rawApp.toLowerCase(), "") : "";
-            if (resolved && !isGenericFreedesktopIcon(resolved)) {
-              appIcon = resolved;
-            }
+        } else if (rawApp) {
+          var resolved = ThemeIcons.findAppEntry(rawApp.toLowerCase()) ? ThemeIcons.iconForAppId(rawApp.toLowerCase(), "") : "";
+          if (resolved && !isGenericFreedesktopIcon(resolved, rawApp)) {
+            appIcon = resolved;
           }
         }
       }
