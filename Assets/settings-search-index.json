@@ -874,6 +874,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.desktop-widgets.only-on-empty-workspace-label",
+    "descriptionKey": "panels.desktop-widgets.only-on-empty-workspace-description",
+    "widget": "NToggle",
+    "tab": 6,
+    "tabLabel": "panels.desktop-widgets.title",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.display.monitors-backlight-device-label",
     "descriptionKey": "panels.display.monitors-backlight-device-description",
     "widget": "NComboBox",
@@ -1428,6 +1436,15 @@
     "labelKey": "panels.idle.fade-duration-label",
     "descriptionKey": "panels.idle.fade-duration-description",
     "widget": "NSpinBox",
+    "tab": 13,
+    "tabLabel": "panels.idle.title",
+    "subTab": 0,
+    "subTabLabel": "panels.idle.tab-behavior"
+  },
+  {
+    "labelKey": "panels.idle.ignore-list-label",
+    "descriptionKey": "panels.idle.ignore-list-description",
+    "widget": "NLabel",
     "tab": 13,
     "tabLabel": "panels.idle.title",
     "subTab": 0,

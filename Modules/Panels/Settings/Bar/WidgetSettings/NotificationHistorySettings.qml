@@ -22,6 +22,7 @@ ColumnLayout {
   property string valueMiddleClickAction: widgetData.middleClickAction !== undefined ? widgetData.middleClickAction : (widgetMetadata.middleClickAction ?? "markAllRead")
   property string valueMiddleClickCommand: widgetData.middleClickCommand !== undefined ? widgetData.middleClickCommand : (widgetMetadata.middleClickCommand ?? "")
   property bool valueShowUnreadBadge: widgetData.showUnreadBadge !== undefined ? widgetData.showUnreadBadge : widgetMetadata.showUnreadBadge
+  property bool valueShowTimeSinceLastNotification: widgetData.showTimeSinceLastNotification !== undefined ? widgetData.showTimeSinceLastNotification : (widgetMetadata.showTimeSinceLastNotification ?? true)
   property bool valueHideWhenZero: widgetData.hideWhenZero !== undefined ? widgetData.hideWhenZero : widgetMetadata.hideWhenZero
   property bool valueHideWhenZeroUnread: widgetData.hideWhenZeroUnread !== undefined ? widgetData.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
   property string valueUnreadBadgeColor: widgetData.unreadBadgeColor !== undefined ? widgetData.unreadBadgeColor : widgetMetadata.unreadBadgeColor
@@ -35,6 +36,7 @@ ColumnLayout {
     settings.middleClickAction = valueMiddleClickAction;
     settings.middleClickCommand = valueMiddleClickCommand;
     settings.showUnreadBadge = valueShowUnreadBadge;
+    settings.showTimeSinceLastNotification = valueShowTimeSinceLastNotification;
     settings.hideWhenZero = valueHideWhenZero;
     settings.hideWhenZeroUnread = valueHideWhenZeroUnread;
     settings.unreadBadgeColor = valueUnreadBadgeColor;
@@ -178,6 +180,17 @@ ColumnLayout {
       saveSettings();
     }
     defaultValue: widgetMetadata.showUnreadBadge
+  }
+
+  NToggle {
+    label: I18n.tr("bar.notification-history.show-time-since-last-notification-label")
+    description: I18n.tr("bar.notification-history.show-time-since-last-notification-description")
+    checked: valueShowTimeSinceLastNotification
+    onToggled: checked => {
+      valueShowTimeSinceLastNotification = checked;
+      saveSettings();
+    }
+    defaultValue: widgetMetadata.showTimeSinceLastNotification ?? true
   }
 
   NColorChoice {

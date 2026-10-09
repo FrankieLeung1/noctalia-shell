@@ -37,6 +37,7 @@ Item {
   readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
   readonly property string displayMode: widgetSettings.displayMode !== undefined ? widgetSettings.displayMode : (widgetMetadata.displayMode ?? "onhover")
   readonly property bool showUnreadBadge: widgetSettings.showUnreadBadge !== undefined ? widgetSettings.showUnreadBadge : widgetMetadata.showUnreadBadge
+  readonly property bool showTimeSinceLastNotification: widgetSettings.showTimeSinceLastNotification !== undefined ? widgetSettings.showTimeSinceLastNotification : (widgetMetadata.showTimeSinceLastNotification ?? true)
   readonly property bool hideWhenZero: widgetSettings.hideWhenZero !== undefined ? widgetSettings.hideWhenZero : widgetMetadata.hideWhenZero
   readonly property bool hideWhenZeroUnread: widgetSettings.hideWhenZeroUnread !== undefined ? widgetSettings.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
   readonly property string unreadBadgeColor: widgetSettings.unreadBadgeColor !== undefined ? widgetSettings.unreadBadgeColor : widgetMetadata.unreadBadgeColor
@@ -76,12 +77,14 @@ Item {
 
   readonly property var unreadInfo: {
     var _rev = root.revision;
+    var _now = Time.now;
     var since = NotificationService.lastSeenTs;
     var model = NotificationService.historyModel;
     var totalCount = model.count;
     var unreadCount = 0;
     var latestTitle = "";
     var latestItem = null;
+    var latestTimestamp = 0;
     var uniqueApps = [];
 
     for (var i = 0; i < totalCount; i++) {
@@ -98,6 +101,7 @@ Item {
         if (latestTitle === "") {
           latestTitle = title;
           latestItem = item;
+          latestTimestamp = ts;
         }
         var appName = (item.appName || "").trim() || title;
         if (uniqueApps.indexOf(appName) === -1) {
@@ -106,21 +110,71 @@ Item {
       }
     }
 
+    var isGenericFreedesktopIcon = function(origImg) {
+      if (!origImg)
+        return false;
+      var lower = origImg.toLowerCase();
+      var genericNames = [
+        "application-x-executable",
+        "dialog-information",
+        "dialog-warning",
+        "dialog-error",
+        "dialog-question",
+        "dialog-password",
+        "preferences-desktop-notification",
+        "preferences-desktop-notification-bell",
+        "applications-other",
+        "system-run",
+        "notification-symbolic",
+        "dialog-information-symbolic",
+        "notification"
+      ];
+      for (var k = 0; k < genericNames.length; k++) {
+        var g = genericNames[k];
+        if (lower.indexOf("fallback=" + g) !== -1 || lower.indexOf("/icon/" + g) !== -1 || lower.indexOf("/" + g + ".") !== -1 || lower === g || lower === "image://icon/" + g) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     var appIcon = "";
     if (unreadCount > 0 && uniqueApps.length === 1 && latestItem) {
-      var img = latestItem.cachedImage || latestItem.originalImage || "";
-      if (img && (img.startsWith("file://") || img.startsWith("/") || img.startsWith("image://"))) {
-        appIcon = img;
-      } else {
-        var rawApp = (latestItem.appName || "").trim();
-        if (rawApp) {
-          var resolved = ThemeIcons.iconForAppId(rawApp.toLowerCase(), "");
-          if (resolved) {
-            appIcon = resolved;
-          } else {
-            appIcon = ThemeIcons.iconFromName(rawApp.toLowerCase(), "");
+      var orig = (latestItem.originalImage || "").trim();
+      var isGeneric = isGenericFreedesktopIcon(orig);
+      if (!isGeneric) {
+        var img = latestItem.cachedImage || latestItem.originalImage || "";
+        if (img && (img.startsWith("file://") || img.startsWith("/") || img.startsWith("image://"))) {
+          appIcon = img;
+        } else {
+          var rawApp = (latestItem.appName || "").trim();
+          if (rawApp) {
+            var resolved = ThemeIcons.findAppEntry(rawApp.toLowerCase()) ? ThemeIcons.iconForAppId(rawApp.toLowerCase(), "") : "";
+            if (resolved && !isGenericFreedesktopIcon(resolved)) {
+              appIcon = resolved;
+            }
           }
         }
+      }
+    }
+
+    var timeText = "";
+    if (latestTimestamp > 0) {
+      var diffSec = Math.max(0, Math.floor((_now.getTime() - latestTimestamp) / 1000));
+      if (diffSec < 60) {
+        timeText = "< 1m";
+      } else {
+        var days = Math.floor(diffSec / 86400);
+        var hours = Math.floor((diffSec % 86400) / 3600);
+        var minutes = Math.floor((diffSec % 3600) / 60);
+        var parts = [];
+        if (days > 0)
+          parts.push(days + "d");
+        if (hours > 0)
+          parts.push(hours + "h");
+        if (minutes > 0)
+          parts.push(minutes + "m");
+        timeText = parts.join(" ");
       }
     }
 
@@ -128,7 +182,8 @@ Item {
       count: unreadCount,
       latestTitle: latestTitle,
       appCount: uniqueApps.length,
-      appIcon: appIcon
+      appIcon: appIcon,
+      timeText: timeText
     };
   }
 
@@ -186,7 +241,16 @@ Item {
     icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
     iconImage: NotificationService.doNotDisturb ? "" : root.unreadInfo.appIcon
     text: root.unreadInfo.latestTitle
-    suffix: root.unreadInfo.appCount > 1 ? ` + ${root.unreadInfo.appCount - 1}` : ""
+    suffix: {
+      var s = "";
+      if (root.unreadInfo.appCount > 1) {
+        s += ` + ${root.unreadInfo.appCount - 1}`;
+      }
+      if (root.showTimeSinceLastNotification && root.unreadInfo.timeText) {
+        s += ` | ${root.unreadInfo.timeText}`;
+      }
+      return s;
+    }
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow" && text !== ""
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""

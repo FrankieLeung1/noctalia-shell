@@ -225,6 +225,8 @@
       "hide-widget-when-zero-unread-description": "Hide the notification icon when there are no unread notifications.",
       "hide-widget-when-zero-unread-label": "Hide icon when no unread notifications",
       "middle-click-action-description": "Choose the action performed when clicking the widget with the middle mouse button.",
+      "show-time-since-last-notification-description": "Display the time elapsed since the last notification came in alongside the unread title.",
+      "show-time-since-last-notification-label": "Show time since last notification",
       "show-unread-badge-description": "Display a badge showing the number of unread notifications.",
       "show-unread-badge-label": "Show unread badge",
       "unread-badge-color-description": "Select the color for the unread notification badge.",

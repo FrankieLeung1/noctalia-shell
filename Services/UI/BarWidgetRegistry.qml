@@ -235,6 +235,7 @@ Singleton {
                                     "displayMode": "onhover",
                                     "iconPosition": "left",
                                     "showUnreadBadge": true,
+                                    "showTimeSinceLastNotification": true,
                                     "hideWhenZero": false,
                                     "hideWhenZeroUnread": false,
                                     "unreadBadgeColor": "primary",
